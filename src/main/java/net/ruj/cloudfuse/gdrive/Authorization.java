@@ -12,8 +12,6 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
-import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.FileList;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,35 +19,17 @@ import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.List;
 
-public class Quickstart {
-    /**
-     * Application name.
-     */
-    private static final String APPLICATION_NAME =
-            "Drive API Java Quickstart";
-
-    /**
-     * Directory to store user credentials for this application.
-     */
-    private static final java.io.File DATA_STORE_DIR = new java.io.File(
-            System.getProperty("user.home"), ".credentials/drive-java-quickstart");
-
-    /**
-     * Global instance of the {@link FileDataStoreFactory}.
-     */
-    private static FileDataStoreFactory DATA_STORE_FACTORY;
-
+public class Authorization {
     /**
      * Global instance of the JSON factory.
      */
     private static final JsonFactory JSON_FACTORY =
             JacksonFactory.getDefaultInstance();
-
     /**
-     * Global instance of the HTTP transport.
+     * Directory to store user credentials for this application.
      */
-    private static HttpTransport HTTP_TRANSPORT;
-
+    private static final java.io.File DATA_STORE_DIR = new java.io.File(
+            System.getProperty("user.home"), ".credentials/cloudfuse");
     /**
      * Global instance of the scopes required by this quickstart.
      * <p>
@@ -58,6 +38,19 @@ public class Quickstart {
      */
     private static final List<String> SCOPES =
             Collections.singletonList(DriveScopes.DRIVE_METADATA_READONLY);
+    /**
+     * Application name.
+     */
+    private static final String APPLICATION_NAME =
+            "Drive API Java Quickstart";
+    /**
+     * Global instance of the {@link FileDataStoreFactory}.
+     */
+    private static FileDataStoreFactory DATA_STORE_FACTORY;
+    /**
+     * Global instance of the HTTP transport.
+     */
+    private static HttpTransport HTTP_TRANSPORT;
 
     static {
         try {
@@ -75,10 +68,10 @@ public class Quickstart {
      * @return an authorized Credential object.
      * @throws IOException
      */
-    public static Credential authorize() throws IOException {
+    static Credential authorize() throws IOException {
         // Load client secrets.
         InputStream in =
-                Quickstart.class.getResourceAsStream("/client_secret.json");
+                Authorization.class.getResourceAsStream("/client_secret.json");
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
@@ -109,25 +102,4 @@ public class Quickstart {
                 .setApplicationName(APPLICATION_NAME)
                 .build();
     }
-
-    public static void main(String[] args) throws IOException {
-        // Build a new authorized API client service.
-        Drive service = getDriveService();
-
-        // Print the names and IDs for up to 10 files.
-        FileList result = service.files().list()
-                .setPageSize(10)
-                .setFields("nextPageToken, files(id, name)")
-                .execute();
-        List<File> files = result.getFiles();
-        if (files == null || files.size() == 0) {
-            System.out.println("No files found.");
-        } else {
-            System.out.println("Files:");
-            for (File file : files) {
-                System.out.printf("%s (%s)\n", file.getName(), file.getId());
-            }
-        }
-    }
-
 }

@@ -4,17 +4,24 @@ import jnr.ffi.Pointer;
 import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
+import net.ruj.cloudfuse.gdrive.GDriveService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.FuseStubFS;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
+@Component
 public class MemoryFS extends FuseStubFS {
-
+    private final GDriveService gDriveService;
     private MemoryDirectory rootDirectory = new MemoryDirectory("");
 
-    public MemoryFS() {}
+    @Autowired
+    public MemoryFS(GDriveService gDriveService) {
+        this.gDriveService = gDriveService;
+    }
 
     @Override
     public int create(String path, @mode_t long mode, FuseFileInfo fi) {
@@ -58,7 +65,6 @@ public class MemoryFS extends FuseStubFS {
         return rootDirectory.find(path);
     }
 
-
     @Override
     public int mkdir(String path, @mode_t long mode) {
         if (getPath(path) != null) {
@@ -71,7 +77,6 @@ public class MemoryFS extends FuseStubFS {
         }
         return -ErrorCodes.ENOENT();
     }
-
 
     @Override
     public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {

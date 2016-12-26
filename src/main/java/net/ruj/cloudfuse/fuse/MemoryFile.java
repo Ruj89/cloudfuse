@@ -3,7 +3,6 @@ package net.ruj.cloudfuse.fuse;
 import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.struct.FileStat;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 public class MemoryFile extends MemoryPath {
@@ -11,16 +10,6 @@ public class MemoryFile extends MemoryPath {
 
     MemoryFile(String name, MemoryDirectory parent) {
         super(name, parent);
-    }
-
-    MemoryFile(String name, String text) {
-        super(name);
-        try {
-            byte[] contentBytes = text.getBytes("UTF-8");
-            contents = ByteBuffer.wrap(contentBytes);
-        } catch (UnsupportedEncodingException e) {
-            // Not going to happen
-        }
     }
 
     @Override
