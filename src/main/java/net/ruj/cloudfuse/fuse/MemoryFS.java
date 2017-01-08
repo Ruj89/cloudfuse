@@ -6,6 +6,7 @@ import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
 import net.ruj.cloudfuse.gdrive.GDriveService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.FuseFillDir;
@@ -14,6 +15,7 @@ import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
 @Component
+@Profile("linux")
 public class MemoryFS extends FuseStubFS {
     private final GDriveService gDriveService;
     private MemoryDirectory rootDirectory = new MemoryDirectory("");

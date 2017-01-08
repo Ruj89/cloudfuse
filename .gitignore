@@ -38,4 +38,5 @@ fabric.properties
 /gradlew.bat
 /gradlew
 /gradle/
-/src/main/resources/client_secret.json
+/src/main/resources/*.json
+/src/main/resources/application.yml
