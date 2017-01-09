@@ -20,6 +20,7 @@ spring:
 
 cloudfuse:
   fuse:
-    drive:
-      localFolder: /tmp/mnt
-      remoteFolder: cloudfuse
+    defaults:
+      drive:
+        localFolder: /tmp/mnt
+        remoteFolder: cloudfuse
