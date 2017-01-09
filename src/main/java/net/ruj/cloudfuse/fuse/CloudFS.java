@@ -4,25 +4,20 @@ import jnr.ffi.Pointer;
 import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
-import net.ruj.cloudfuse.gdrive.GDriveService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.FuseStubFS;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
-@Component
-@Profile("linux")
-public class CloudFS extends FuseStubFS {
-    private final GDriveService gDriveService;
-    private CloudDirectory rootDirectory = new CloudDirectory("");
+import java.nio.file.Paths;
 
-    @Autowired
-    public CloudFS(GDriveService gDriveService) {
-        this.gDriveService = gDriveService;
+public class CloudFS extends FuseStubFS {
+    private CloudDirectory rootDirectory;
+
+    public CloudFS(CloudFileSystemService cloudFileSystemService) {
+        rootDirectory = new CloudDirectory(Paths.get("/"), "");
+        rootDirectory.addEventHandler(cloudFileSystemService);
     }
 
     @Override
@@ -50,12 +45,14 @@ public class CloudFS extends FuseStubFS {
     }
 
     private String getLastComponent(String path) {
+        // Trim final slashes
         while (path.substring(path.length() - 1).equals("/")) {
             path = path.substring(0, path.length() - 1);
         }
         if (path.isEmpty()) {
             return "";
         }
+        // Return path name
         return path.substring(path.lastIndexOf("/") + 1);
     }
 

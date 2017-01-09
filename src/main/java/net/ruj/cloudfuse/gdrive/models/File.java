@@ -7,7 +7,8 @@ public class File {
         return name;
     }
 
-    public void setName(String name) {
+    public File setName(String name) {
         this.name = name;
+        return this;
     }
 }

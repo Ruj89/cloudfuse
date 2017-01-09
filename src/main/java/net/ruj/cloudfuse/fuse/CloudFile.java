@@ -1,15 +1,20 @@
 package net.ruj.cloudfuse.fuse;
 
 import jnr.ffi.Pointer;
+import net.ruj.cloudfuse.notifications.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CloudFile extends CloudPath {
     private ByteBuffer contents = ByteBuffer.allocate(0);
+    private Set<FileEventHandler> fileEventHandlers = new HashSet<>();
 
-    CloudFile(String name, CloudDirectory parent) {
-        super(name, parent);
+    CloudFile(Path path, String name, CloudDirectory parent) {
+        super(path, name, parent);
     }
 
     @Override
@@ -56,6 +61,32 @@ public class CloudFile extends CloudPath {
             contents.put(bytesToWrite);
             contents.position(0); // Rewind
         }
+        changed();
         return (int) bufSize;
+    }
+
+    private void changed() {
+        fileEventHandlers.forEach(feh -> feh.fileChanged(this));
+    }
+
+    public CloudFile addEventHandler(FileEventHandler eventHandler) {
+        fileEventHandlers.add(eventHandler);
+        return this;
+    }
+
+    public Path getPath() {
+        return path;
+    }
+
+    public void setPath(Path path) {
+        this.path = path;
+    }
+
+    public ByteBuffer getContents() {
+        return contents;
+    }
+
+    public void setContents(ByteBuffer contents) {
+        this.contents = contents;
     }
 }

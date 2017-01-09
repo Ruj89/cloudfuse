@@ -1,21 +1,27 @@
 package net.ruj.cloudfuse.fuse;
 
 import jnr.ffi.Pointer;
+import net.ruj.cloudfuse.notifications.eventhandlers.DirectoryEventHandler;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CloudDirectory extends CloudPath {
     private List<CloudPath> contents = new ArrayList<>();
+    private Set<DirectoryEventHandler> directoryEventHandlers = new HashSet<>();
 
-    CloudDirectory(String name) {
-        super(name);
+    CloudDirectory(Path path, String name) {
+        super(path, name);
     }
 
-    private CloudDirectory(String name, CloudDirectory parent) {
-        super(name, parent);
+    private CloudDirectory(Path path, String name, CloudDirectory parent) {
+        super(path, name, parent);
     }
 
     synchronized void add(CloudPath p) {
@@ -61,16 +67,23 @@ public class CloudDirectory extends CloudPath {
     }
 
     synchronized void mkdir(String lastComponent) {
-        contents.add(new CloudDirectory(lastComponent, this));
+        CloudDirectory directory = new CloudDirectory(Paths.get(path.toString(), lastComponent), lastComponent, this);
+        contents.add(directory);
+        this.directoryEventHandlers.forEach(directory::addEventHandler);
     }
 
     synchronized void mkfile(String lastComponent) {
-        contents.add(new CloudFile(lastComponent, this));
+        CloudFile file = new CloudFile(Paths.get(path.toString(), lastComponent), lastComponent, this);
+        contents.add(file);
+        directoryEventHandlers.forEach(deh -> deh.fileAdded(this, file));
     }
 
     synchronized void read(Pointer buf, FuseFillDir filler) {
-        for (CloudPath p : contents) {
-            filler.apply(buf, p.name, null, 0);
-        }
+        contents.forEach(c -> filler.apply(buf, c.name, null, 0));
+    }
+
+    public CloudDirectory addEventHandler(DirectoryEventHandler eventHandler) {
+        directoryEventHandlers.add(eventHandler);
+        return this;
     }
 }
