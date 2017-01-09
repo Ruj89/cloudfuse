@@ -2,15 +2,15 @@ package net.ruj.cloudfuse.fuse;
 
 import ru.serce.jnrfuse.struct.FileStat;
 
-public abstract class MemoryPath {
+public abstract class CloudPath {
     String name;
-    MemoryDirectory parent;
+    CloudDirectory parent;
 
-    MemoryPath(String name) {
+    CloudPath(String name) {
         this(name, null);
     }
 
-    MemoryPath(String name, MemoryDirectory parent) {
+    CloudPath(String name, CloudDirectory parent) {
         this.name = name;
         this.parent = parent;
     }
@@ -22,7 +22,7 @@ public abstract class MemoryPath {
         }
     }
 
-    protected MemoryPath find(String path) {
+    protected CloudPath find(String path) {
         while (path.startsWith("/")) {
             path = path.substring(1);
         }

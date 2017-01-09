@@ -16,12 +16,12 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 
 @Component
 @Profile("linux")
-public class MemoryFS extends FuseStubFS {
+public class CloudFS extends FuseStubFS {
     private final GDriveService gDriveService;
-    private MemoryDirectory rootDirectory = new MemoryDirectory("");
+    private CloudDirectory rootDirectory = new CloudDirectory("");
 
     @Autowired
-    public MemoryFS(GDriveService gDriveService) {
+    public CloudFS(GDriveService gDriveService) {
         this.gDriveService = gDriveService;
     }
 
@@ -30,9 +30,9 @@ public class MemoryFS extends FuseStubFS {
         if (getPath(path) != null) {
             return -ErrorCodes.EEXIST();
         }
-        MemoryPath parent = getParentPath(path);
-        if (parent instanceof MemoryDirectory) {
-            ((MemoryDirectory) parent).mkfile(getLastComponent(path));
+        CloudPath parent = getParentPath(path);
+        if (parent instanceof CloudDirectory) {
+            ((CloudDirectory) parent).mkfile(getLastComponent(path));
             return 0;
         }
         return -ErrorCodes.ENOENT();
@@ -41,7 +41,7 @@ public class MemoryFS extends FuseStubFS {
 
     @Override
     public int getattr(String path, FileStat stat) {
-        MemoryPath p = getPath(path);
+        CloudPath p = getPath(path);
         if (p != null) {
             p.getattr(stat);
             return 0;
@@ -59,11 +59,11 @@ public class MemoryFS extends FuseStubFS {
         return path.substring(path.lastIndexOf("/") + 1);
     }
 
-    private MemoryPath getParentPath(String path) {
+    private CloudPath getParentPath(String path) {
         return rootDirectory.find(path.substring(0, path.lastIndexOf("/")));
     }
 
-    private MemoryPath getPath(String path) {
+    private CloudPath getPath(String path) {
         return rootDirectory.find(path);
     }
 
@@ -72,9 +72,9 @@ public class MemoryFS extends FuseStubFS {
         if (getPath(path) != null) {
             return -ErrorCodes.EEXIST();
         }
-        MemoryPath parent = getParentPath(path);
-        if (parent instanceof MemoryDirectory) {
-            ((MemoryDirectory) parent).mkdir(getLastComponent(path));
+        CloudPath parent = getParentPath(path);
+        if (parent instanceof CloudDirectory) {
+            ((CloudDirectory) parent).mkdir(getLastComponent(path));
             return 0;
         }
         return -ErrorCodes.ENOENT();
@@ -82,57 +82,57 @@ public class MemoryFS extends FuseStubFS {
 
     @Override
     public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-        MemoryPath p = getPath(path);
+        CloudPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof MemoryFile)) {
+        if (!(p instanceof CloudFile)) {
             return -ErrorCodes.EISDIR();
         }
-        return ((MemoryFile) p).read(buf, size, offset);
+        return ((CloudFile) p).read(buf, size, offset);
     }
 
     @Override
     public int readdir(String path, Pointer buf, FuseFillDir filter, @off_t long offset, FuseFileInfo fi) {
-        MemoryPath p = getPath(path);
+        CloudPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof MemoryDirectory)) {
+        if (!(p instanceof CloudDirectory)) {
             return -ErrorCodes.ENOTDIR();
         }
         filter.apply(buf, ".", null, 0);
         filter.apply(buf, "..", null, 0);
-        ((MemoryDirectory) p).read(buf, filter);
+        ((CloudDirectory) p).read(buf, filter);
         return 0;
     }
 
     @Override
     public int rename(String path, String newName) {
-        MemoryPath p = getPath(path);
+        CloudPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        MemoryPath newParent = getParentPath(newName);
+        CloudPath newParent = getParentPath(newName);
         if (newParent == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(newParent instanceof MemoryDirectory)) {
+        if (!(newParent instanceof CloudDirectory)) {
             return -ErrorCodes.ENOTDIR();
         }
         p.delete();
         p.rename(newName.substring(newName.lastIndexOf("/")));
-        ((MemoryDirectory) newParent).add(p);
+        ((CloudDirectory) newParent).add(p);
         return 0;
     }
 
     @Override
     public int rmdir(String path) {
-        MemoryPath p = getPath(path);
+        CloudPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof MemoryDirectory)) {
+        if (!(p instanceof CloudDirectory)) {
             return -ErrorCodes.ENOTDIR();
         }
         p.delete();
@@ -141,20 +141,20 @@ public class MemoryFS extends FuseStubFS {
 
     @Override
     public int truncate(String path, long offset) {
-        MemoryPath p = getPath(path);
+        CloudPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof MemoryFile)) {
+        if (!(p instanceof CloudFile)) {
             return -ErrorCodes.EISDIR();
         }
-        ((MemoryFile) p).truncate(offset);
+        ((CloudFile) p).truncate(offset);
         return 0;
     }
 
     @Override
     public int unlink(String path) {
-        MemoryPath p = getPath(path);
+        CloudPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
@@ -164,13 +164,13 @@ public class MemoryFS extends FuseStubFS {
 
     @Override
     public int write(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-        MemoryPath p = getPath(path);
+        CloudPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof MemoryFile)) {
+        if (!(p instanceof CloudFile)) {
             return -ErrorCodes.EISDIR();
         }
-        return ((MemoryFile) p).write(buf, size, offset);
+        return ((CloudFile) p).write(buf, size, offset);
     }
 }

@@ -16,4 +16,10 @@ logging:
 
 spring:
   profiles:
-    active: windows
+    active: linux
+
+cloudfuse:
+  fuse:
+    drive:
+      localFolder: /tmp/mnt
+      remoteFolder: cloudfuse

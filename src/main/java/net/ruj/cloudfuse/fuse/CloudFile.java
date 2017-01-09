@@ -5,10 +5,10 @@ import ru.serce.jnrfuse.struct.FileStat;
 
 import java.nio.ByteBuffer;
 
-public class MemoryFile extends MemoryPath {
+public class CloudFile extends CloudPath {
     private ByteBuffer contents = ByteBuffer.allocate(0);
 
-    MemoryFile(String name, MemoryDirectory parent) {
+    CloudFile(String name, CloudDirectory parent) {
         super(name, parent);
     }
 
