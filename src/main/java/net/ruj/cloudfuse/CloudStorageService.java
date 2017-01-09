@@ -1,7 +1,6 @@
 package net.ruj.cloudfuse;
 
-import org.springframework.http.HttpEntity;
-import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.web.client.RequestCallback;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -9,5 +8,5 @@ import java.nio.file.Path;
 public interface CloudStorageService {
     void uploadFile(Path path, ByteBuffer byteBuffer);
 
-    HttpEntity<LinkedMultiValueMap<String, Object>> generateRequestEntity(Path path, ByteBuffer byteBuffer);
+    RequestCallback generateRequestCallback(Path path, ByteBuffer byteBuffer);
 }
