@@ -13,9 +13,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class GDriveService {
-    private final OAuth2RestTemplate oAuth2RestTemplate;
-
     static final Logger logger = LoggerFactory.getLogger(GDriveService.class);
+    private final OAuth2RestTemplate oAuth2RestTemplate;
 
     @Autowired
     public GDriveService(OAuth2RestTemplate oAuth2RestTemplate) {
