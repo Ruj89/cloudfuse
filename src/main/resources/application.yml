@@ -1,0 +1,19 @@
+security:
+  oauth2:
+    client:
+      clientId: @googleClientID@
+      clientSecret: @googleClientSecret@
+      accessTokenUri: https://accounts.google.com/o/oauth2/token
+      userAuthorizationUri: https://accounts.google.com/o/oauth2/auth
+      clientAuthenticationScheme: form
+      scope: https://www.googleapis.com/auth/drive
+    resource:
+      userInfoUri: https://www.googleapis.com/drive/v3/about?fields=user
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+spring:
+  profiles:
+    active: windows

@@ -1,11 +1,22 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 apply plugin: 'java'
-apply plugin: 'spring-boot'
+apply plugin: 'org.springframework.boot'
+
+apply from: 'oauth2secrets.gradle'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 ext {
     springBootVersion = '1.4.3.RELEASE'
+}
+
+processResources {
+    filter ReplaceTokens, tokens: [
+            "googleClientID": project.ext.googleClientID,
+            "googleClientSecret": project.ext.googleClientSecret
+    ]
 }
 
 repositories {
@@ -22,7 +33,6 @@ buildscript {
         classpath('org.springframework.boot:spring-boot-gradle-plugin:1.4.3.RELEASE')
     }
 }
-
 
 dependencies {
     compile(group: 'com.github.serceman', name: 'jnr-fuse', version: '0.3.1')

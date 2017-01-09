@@ -40,3 +40,5 @@ fabric.properties
 /gradle/
 /src/main/resources/*.json
 /src/main/resources/application.yml
+/oauth2secrets.gradle
+!/src/main/resources/application.yml
