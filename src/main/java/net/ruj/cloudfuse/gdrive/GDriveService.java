@@ -1,5 +1,7 @@
 package net.ruj.cloudfuse.gdrive;
 
+import net.ruj.cloudfuse.gdrive.models.File;
+import net.ruj.cloudfuse.gdrive.models.FileList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

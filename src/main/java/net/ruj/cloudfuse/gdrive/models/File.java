@@ -1,4 +1,4 @@
-package net.ruj.cloudfuse.gdrive;
+package net.ruj.cloudfuse.gdrive.models;
 
 public class File {
     public String name;

@@ -1,4 +1,4 @@
-package net.ruj.cloudfuse.gdrive;
+package net.ruj.cloudfuse.gdrive.models;
 
 import java.util.List;
 
