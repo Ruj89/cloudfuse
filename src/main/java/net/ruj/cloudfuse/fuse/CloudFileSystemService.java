@@ -53,14 +53,19 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
+    public void directoryAdded(CloudDirectory parent, CloudDirectory directory) {
+        cloudStorageService.makeDirectory(parent, directory);
+    }
+
+    @Override
     public void fileAdded(CloudDirectory directory, CloudFile file) {
         logger.info("File added in directory");
         file.addEventHandler(this);
     }
 
     @Override
-    public void fileChanged(CloudFile cloudFile) {
-        cloudStorageService.uploadFile(cloudFile.getPath(), cloudFile.getContents());
+    public void fileChanged(CloudDirectory parent, CloudFile file) {
+        cloudStorageService.uploadFile(parent, file);
         logger.info("File modified");
     }
 }

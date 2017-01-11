@@ -1,12 +1,10 @@
 package net.ruj.cloudfuse;
 
-import org.springframework.web.client.RequestCallback;
-
-import java.nio.ByteBuffer;
-import java.nio.file.Path;
+import net.ruj.cloudfuse.fuse.CloudDirectory;
+import net.ruj.cloudfuse.fuse.CloudFile;
 
 public interface CloudStorageService {
-    void uploadFile(Path path, ByteBuffer byteBuffer);
+    void uploadFile(CloudDirectory parent, CloudFile file);
 
-    RequestCallback generateRequestCallback(Path path, ByteBuffer byteBuffer);
+    void makeDirectory(CloudDirectory parent, CloudDirectory directory);
 }

@@ -66,7 +66,7 @@ public class CloudFile extends CloudPath {
     }
 
     private void changed() {
-        fileEventHandlers.forEach(feh -> feh.fileChanged(this));
+        fileEventHandlers.forEach(feh -> feh.fileChanged(null, this));
     }
 
     public CloudFile addEventHandler(FileEventHandler eventHandler) {

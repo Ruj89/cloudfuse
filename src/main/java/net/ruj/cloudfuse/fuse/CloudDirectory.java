@@ -70,6 +70,7 @@ public class CloudDirectory extends CloudPath {
         CloudDirectory directory = new CloudDirectory(Paths.get(path.toString(), lastComponent), lastComponent, this);
         contents.add(directory);
         this.directoryEventHandlers.forEach(directory::addEventHandler);
+        directoryEventHandlers.forEach(deh -> deh.directoryAdded(this, directory));
     }
 
     synchronized void mkfile(String lastComponent) {
