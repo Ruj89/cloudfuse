@@ -2,10 +2,12 @@ package net.ruj.cloudfuse.fuse;
 
 import jnr.ffi.provider.ClosureManager;
 import jnr.ffi.provider.jffi.NativeRuntime;
-import net.ruj.cloudfuse.CloudStorageService;
-import net.ruj.cloudfuse.fuse.configuration.FuseConfiguration;
-import net.ruj.cloudfuse.notifications.eventhandlers.DirectoryEventHandler;
-import net.ruj.cloudfuse.notifications.eventhandlers.FileEventHandler;
+import net.ruj.cloudfuse.clouds.CloudStorageService;
+import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
+import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
+import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
+import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
+import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

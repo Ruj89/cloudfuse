@@ -1,4 +1,4 @@
-package net.ruj.cloudfuse.gdrive.models;
+package net.ruj.cloudfuse.clouds.gdrive.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

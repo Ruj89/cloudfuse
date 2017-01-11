@@ -1,9 +1,9 @@
-package net.ruj.cloudfuse.gdrive;
+package net.ruj.cloudfuse.clouds.gdrive;
 
-import net.ruj.cloudfuse.CloudStorageService;
-import net.ruj.cloudfuse.fuse.CloudDirectory;
-import net.ruj.cloudfuse.fuse.CloudFile;
-import net.ruj.cloudfuse.gdrive.models.File;
+import net.ruj.cloudfuse.clouds.CloudStorageService;
+import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
+import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.clouds.gdrive.models.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
@@ -33,7 +33,7 @@ public class GDriveService implements CloudStorageService {
         logger.info("Uploading file '" + file.getPath() + "'...");
         File remoteFile = restTemplate.postForObject(
                 "https://www.googleapis.com/upload/drive/v3/files?uploadType=media",
-                generateFileCreateRequestEntity(file.getPath(), file.getContents()),
+                generateFileCreateRequestEntity(file.getContents()),
                 File.class
         );
         remoteFile = restTemplate.patchForObject(
@@ -73,7 +73,7 @@ public class GDriveService implements CloudStorageService {
         );
     }
 
-    private HttpEntity<ByteArrayResource> generateFileCreateRequestEntity(Path path, ByteBuffer byteBuffer) {
+    private HttpEntity<ByteArrayResource> generateFileCreateRequestEntity(ByteBuffer byteBuffer) {
         ByteArrayResource body = new ByteArrayResource(byteBuffer.array());
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, "application/octet-stream");

@@ -1,7 +1,7 @@
-package net.ruj.cloudfuse.fuse;
+package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
-import net.ruj.cloudfuse.notifications.eventhandlers.DirectoryEventHandler;
+import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
 

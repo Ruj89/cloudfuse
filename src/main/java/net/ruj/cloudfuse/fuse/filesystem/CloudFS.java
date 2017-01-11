@@ -1,9 +1,10 @@
-package net.ruj.cloudfuse.fuse;
+package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
 import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
+import net.ruj.cloudfuse.fuse.CloudFileSystemService;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.FuseStubFS;

@@ -1,7 +1,7 @@
-package net.ruj.cloudfuse;
+package net.ruj.cloudfuse.clouds;
 
-import net.ruj.cloudfuse.fuse.CloudDirectory;
-import net.ruj.cloudfuse.fuse.CloudFile;
+import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
+import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 
 public interface CloudStorageService {
     void uploadFile(CloudDirectory parent, CloudFile file);

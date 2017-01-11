@@ -1,4 +1,4 @@
-package net.ruj.cloudfuse.fuse.configuration;
+package net.ruj.cloudfuse.clouds.gdrive;
 
 public class DriveConfiguration {
     private String localFolder = "";

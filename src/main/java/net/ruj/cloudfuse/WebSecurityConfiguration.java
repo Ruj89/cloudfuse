@@ -1,4 +1,4 @@
-package net.ruj.cloudfuse.gdrive;
+package net.ruj.cloudfuse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.client.EnableOAuth2Sso;

@@ -1,7 +1,7 @@
-package net.ruj.cloudfuse.fuse;
+package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
-import net.ruj.cloudfuse.notifications.eventhandlers.FileEventHandler;
+import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
 
 import java.nio.ByteBuffer;

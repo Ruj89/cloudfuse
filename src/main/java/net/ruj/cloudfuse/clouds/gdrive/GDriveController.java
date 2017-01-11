@@ -1,6 +1,6 @@
-package net.ruj.cloudfuse.gdrive;
+package net.ruj.cloudfuse.clouds.gdrive;
 
-import net.ruj.cloudfuse.CloudStorageService;
+import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.fuse.CloudFileSystemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;

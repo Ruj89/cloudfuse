@@ -1,5 +1,6 @@
-package net.ruj.cloudfuse.fuse.configuration;
+package net.ruj.cloudfuse.fuse;
 
+import net.ruj.cloudfuse.clouds.gdrive.DriveConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 

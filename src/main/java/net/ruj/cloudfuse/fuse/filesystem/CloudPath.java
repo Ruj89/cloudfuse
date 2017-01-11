@@ -1,4 +1,4 @@
-package net.ruj.cloudfuse.fuse;
+package net.ruj.cloudfuse.fuse.filesystem;
 
 import ru.serce.jnrfuse.struct.FileStat;
 
