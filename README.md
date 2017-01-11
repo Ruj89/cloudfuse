@@ -1,8 +1,9 @@
 **CLOUDFUSE**
 =============
+(work in progress)
 
-A Open Source Java and [FUSE](https://github.com/libfuse/libfuse) based virtual file system that mounts to a cloud storage account to a local Linux
-folder.
+A Open Source Java and [FUSE](https://github.com/libfuse/libfuse) based virtual file system that mounts a cloud 
+storage account to a local Linux folder.
 
 Supported cloud storages
 ------------------------
