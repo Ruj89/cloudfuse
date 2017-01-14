@@ -1,5 +1,7 @@
+#!/usr/bin/env bash
 curl \
-    --request PATCH https://www.googleapis.com/drive/v3/files/0B6SQhclX7loWR3RRYVZiVC1YbUU \
+    --request PATCH \
+    "https://www.googleapis.com/drive/v3/files/0B6SQhclX7loWR3RRYVZiVC1YbUU" \
     --data '{"name":"prova.txt","mimeType":"application/octet-stream"}' \
     -H "Content-Type: application/json" \
     -H "Content-Length: 58" \
