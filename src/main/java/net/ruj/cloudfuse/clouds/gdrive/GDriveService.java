@@ -30,35 +30,43 @@ public class GDriveService implements CloudStorageService {
     private final RestTemplate restTemplate;
     private String token;
 
-    public GDriveService(String token) {
+    GDriveService(String token) {
         this.token = token;
         this.restTemplate = new RestTemplate();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         restTemplate.setRequestFactory(requestFactory);
     }
 
-    //TODO: Handle parents and byte streams
+    private UriComponentsBuilder getGDriveURIComponentsBuilder(String path) throws URISyntaxException {
+        return UriComponentsBuilder.fromUri(
+                new URI("https", "www.googleapis.com", path, "", "")
+        );
+    }
+
+    //TODO: Byte streams
     @Override
     public synchronized void uploadFile(CloudDirectory parent, CloudFile file) throws UploadFileException {
         logger.info("Uploading file '" + file.getPath() + "'...");
         try {
             File remoteFile = restTemplate.postForObject(
-                    UriComponentsBuilder.fromUri(
-                            new URI("https", "www.googleapis.com", "/drive/v3/files", "", "")
-                    )
+                    this.getGDriveURIComponentsBuilder("/upload/drive/v3/files")
                             .queryParam("uploadType", "media")
-                            .toUriString(),
+                            .build()
+                            .toUri(),
                     generateFileCreateRequestEntity(file.getContents()),
                     File.class
             );
+            String parentId = ((GDriveCloudPathInfo) parent.getCloudPathInfo()).getLinkedFileInfo().getId();
             remoteFile = restTemplate.patchForObject(
-                    UriComponentsBuilder.fromUri(
-                            new URI("https", "www.googleapis.com", "/drive/v3/files" + remoteFile.getId(), "", "")
-                    )
-                            .toUriString(),
-                    generateFileMetadataRequestEntity(remoteFile, file.getPath().getFileName().toString()),
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files/" + remoteFile.getId())
+                            .queryParam("addParents", parentId)
+                            .queryParam("removeParents", "root")
+                            .build()
+                            .toUri(),
+                    generateFileMetadataRequestEntity(remoteFile.setName(file.getPath().getFileName().toString())),
                     File.class
             );
+            file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
             logger.info("Upload of file '" + remoteFile.getName() + "' completed.");
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -66,12 +74,13 @@ public class GDriveService implements CloudStorageService {
         }
     }
 
-    //TODO: Handle parents
     @Override
     public void makeDirectory(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
         logger.info("Making folder '" + directory.getPath() + "'...");
+        String parentId = ((GDriveCloudPathInfo) parent.getCloudPathInfo()).getLinkedFileInfo().getId();
         try {
-            File remoteFolder = gDriveCreateDirectory(parent, directory.getPath().getFileName().toString());
+            File remoteFolder = gDriveCreateDirectory(directory.getPath().getFileName().toString(), parentId);
+            directory.setCloudPathInfo(new GDriveCloudPathInfo(remoteFolder));
             logger.info("Folder '" + remoteFolder.getName() + "' created successfully.");
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -79,28 +88,23 @@ public class GDriveService implements CloudStorageService {
         }
     }
 
-    private File gDriveCreateDirectory(CloudDirectory parent, String directoryName) throws URISyntaxException {
-        return restTemplate.postForObject(
-                UriComponentsBuilder.fromUri(new URI("https", "www.googleapis.com", "/drive/v3/files", "", ""))
-                        .toUriString(),
-                generateFolderMetadataRequestEntity(new File(), directoryName),
-                File.class
-        );
-    }
-
+    //TODO: discover already existent files
     @Override
     public void makeRoot(CloudDirectory root, FuseConfiguration fuseConfiguration) throws MakeRootException {
         logger.info("Mounting root directory...");
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         ArrayList<String> value = new ArrayList<>();
-        value.add("name+=+'" + fuseConfiguration.getDrive().getRemoteFolder() + "'");
+        value.add("trashed+=+false+and+" +
+                "name+=+'"+fuseConfiguration.getDrive().getRemoteFolder()+"'+and+" +
+                "'root'+in+parents+and+" +
+                "mimeType+=+'application/vnd.google-apps.folder'");
         params.put("q", value);
         try {
             File remoteFolder = restTemplate.exchange(
-                    UriComponentsBuilder.fromUri(
-                            new URI("https", "www.googleapis.com", "/drive/v3/files", "", "")
-                    )
-                            .queryParams(params).build().toUri(),
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files")
+                            .queryParams(params)
+                            .build()
+                            .toUri(),
                     HttpMethod.GET,
                     generateSearchRequestEntity(),
                     FileList.class
@@ -109,7 +113,7 @@ public class GDriveService implements CloudStorageService {
                     .getFiles()
                     .stream()
                     .findAny()
-                    .orElse(gDriveCreateDirectory(null, fuseConfiguration.getDrive().getRemoteFolder()));
+                    .orElse(gDriveCreateDirectory(fuseConfiguration.getDrive().getRemoteFolder()));
             root.setCloudPathInfo(new GDriveCloudPathInfo(remoteFolder));
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -117,22 +121,41 @@ public class GDriveService implements CloudStorageService {
         }
     }
 
+    private File gDriveCreateDirectory(String directoryName) throws URISyntaxException {
+        return this.gDriveCreateDirectory(directoryName, null);
+    }
+
+    private File gDriveCreateDirectory(String directoryName, String parentId) throws URISyntaxException {
+        File file = new File().setName(directoryName);
+        if (parentId != null) file = file.addParents(parentId);
+        return restTemplate.postForObject(
+                this.getGDriveURIComponentsBuilder("/drive/v3/files")
+                        .build()
+                        .toUri(),
+                generateFolderMetadataRequestEntity(
+                        file
+                ),
+                File.class
+        );
+    }
+
     private HttpEntity generateSearchRequestEntity() {
         TokenHttpHeaders headers = new TokenHttpHeaders(token);
         return new HttpEntity(headers);
     }
 
-    private HttpEntity<File> generateFileMetadataRequestEntity(File file, String filename) {
-        TokenHttpHeaders headers = new TokenHttpHeaders(token);
-        return new HttpEntity<>(file.setName(filename), headers);
-    }
-
-    private HttpEntity<File> generateFolderMetadataRequestEntity(File file, String filename) {
+    private HttpEntity<File> generateFileMetadataRequestEntity(File file) {
         TokenHttpHeaders headers = new TokenHttpHeaders(token);
         return new HttpEntity<>(
-                file
-                        .setName(filename)
-                        .setMimeType("application/vnd.google-apps.folder"),
+                file,
+                headers
+        );
+    }
+
+    private HttpEntity<File> generateFolderMetadataRequestEntity(File file) {
+        TokenHttpHeaders headers = new TokenHttpHeaders(token);
+        return new HttpEntity<>(
+                file.setMimeType("application/vnd.google-apps.folder"),
                 headers
         );
     }
@@ -145,7 +168,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     class TokenHttpHeaders extends HttpHeaders {
-        public TokenHttpHeaders(String token) {
+        TokenHttpHeaders(String token) {
             setToken(token);
         }
 

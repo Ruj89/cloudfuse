@@ -3,6 +3,7 @@ package net.ruj.cloudfuse.clouds.gdrive.models;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -13,7 +14,7 @@ public class File {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String kind;
     private String mimeType;
-    private List<String> parents;
+    private List<String> parents = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -55,7 +56,13 @@ public class File {
         return parents;
     }
 
-    public void setParents(List<String> parents) {
+    public File setParents(List<String> parents) {
         this.parents = parents;
+        return this;
+    }
+
+    public File addParents(String parent) {
+        this.getParents().add(parent);
+        return this;
     }
 }

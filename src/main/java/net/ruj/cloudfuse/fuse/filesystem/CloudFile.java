@@ -69,7 +69,7 @@ public class CloudFile extends CloudPath {
     private void changed() {
         fileEventHandlers.forEach(feh -> {
             try {
-                feh.fileChanged(null, this);
+                feh.fileChanged(parent, this);
             } catch (UploadFileException e) {
                 e.printStackTrace();
             }

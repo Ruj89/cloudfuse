@@ -9,4 +9,12 @@ public class GDriveCloudPathInfo implements CloudPathInfo {
     public GDriveCloudPathInfo(File linkedFileInfo) {
         this.linkedFileInfo = linkedFileInfo;
     }
+
+    public File getLinkedFileInfo() {
+        return linkedFileInfo;
+    }
+
+    public void setLinkedFileInfo(File linkedFileInfo) {
+        this.linkedFileInfo = linkedFileInfo;
+    }
 }
