@@ -3,6 +3,9 @@ package net.ruj.cloudfuse.fuse;
 import jnr.ffi.provider.ClosureManager;
 import jnr.ffi.provider.jffi.NativeRuntime;
 import net.ruj.cloudfuse.clouds.CloudStorageService;
+import net.ruj.cloudfuse.clouds.exceptions.MakeDirectoryException;
+import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
+import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
@@ -31,7 +34,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         this.fuseConfiguration = fuseConfiguration;
     }
 
-    public void init(CloudStorageService cloudStorageService) throws IllegalAccessException {
+    public void init(CloudStorageService cloudStorageService) throws IllegalAccessException, MakeRootException {
         this.cloudStorageService = cloudStorageService;
         ClosureManager closureManager = NativeRuntime.getInstance().getClosureManager();
         Field classLoader = findField(closureManager.getClass(), "classLoader");
@@ -55,7 +58,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void directoryAdded(CloudDirectory parent, CloudDirectory directory) {
+    public void directoryAdded(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
         cloudStorageService.makeDirectory(parent, directory);
     }
 
@@ -66,8 +69,12 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void fileChanged(CloudDirectory parent, CloudFile file) {
+    public void fileChanged(CloudDirectory parent, CloudFile file) throws UploadFileException {
         cloudStorageService.uploadFile(parent, file);
         logger.info("File modified");
+    }
+
+    public void rootAdded(CloudDirectory root) throws MakeRootException {
+        cloudStorageService.makeRoot(root, fuseConfiguration);
     }
 }

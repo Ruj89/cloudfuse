@@ -1,5 +1,6 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
+import net.ruj.cloudfuse.clouds.CloudPathInfo;
 import ru.serce.jnrfuse.struct.FileStat;
 
 import java.nio.file.Path;
@@ -8,6 +9,7 @@ public abstract class CloudPath {
     String name;
     CloudDirectory parent;
     Path path;
+    CloudPathInfo cloudPathInfo;
 
     CloudPath(Path path, String name) {
         this(path, name, null);
@@ -51,5 +53,13 @@ public abstract class CloudPath {
 
     public void setPath(Path path) {
         this.path = path;
+    }
+
+    public CloudPathInfo getCloudPathInfo() {
+        return cloudPathInfo;
+    }
+
+    public void setCloudPathInfo(CloudPathInfo cloudPathInfo) {
+        this.cloudPathInfo = cloudPathInfo;
     }
 }

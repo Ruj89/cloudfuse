@@ -1,6 +1,7 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
+import net.ruj.cloudfuse.clouds.exceptions.MakeDirectoryException;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
@@ -70,7 +71,13 @@ public class CloudDirectory extends CloudPath {
         CloudDirectory directory = new CloudDirectory(Paths.get(path.toString(), lastComponent), lastComponent, this);
         contents.add(directory);
         this.directoryEventHandlers.forEach(directory::addEventHandler);
-        directoryEventHandlers.forEach(deh -> deh.directoryAdded(this, directory));
+        directoryEventHandlers.forEach(deh -> {
+            try {
+                deh.directoryAdded(this, directory);
+            } catch (MakeDirectoryException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     synchronized void mkfile(String lastComponent) {

@@ -4,6 +4,7 @@ import jnr.ffi.Pointer;
 import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
+import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
 import net.ruj.cloudfuse.fuse.CloudFileSystemService;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.FuseFillDir;
@@ -16,8 +17,9 @@ import java.nio.file.Paths;
 public class CloudFS extends FuseStubFS {
     private CloudDirectory rootDirectory;
 
-    public CloudFS(CloudFileSystemService cloudFileSystemService) {
+    public CloudFS(CloudFileSystemService cloudFileSystemService) throws MakeRootException {
         rootDirectory = new CloudDirectory(Paths.get("/"), "");
+        cloudFileSystemService.rootAdded(rootDirectory);
         rootDirectory.addEventHandler(cloudFileSystemService);
     }
 

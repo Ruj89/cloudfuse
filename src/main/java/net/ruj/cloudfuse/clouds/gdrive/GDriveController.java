@@ -1,6 +1,7 @@
 package net.ruj.cloudfuse.clouds.gdrive;
 
 import net.ruj.cloudfuse.clouds.CloudStorageService;
+import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
 import net.ruj.cloudfuse.fuse.CloudFileSystemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
@@ -22,7 +23,7 @@ public class GDriveController {
     }
 
     @GetMapping("/mount")
-    public void mount() throws IllegalAccessException {
+    public void mount() throws IllegalAccessException, MakeRootException {
         CloudStorageService cloudStorageService = new GDriveService(oAuth2RestTemplate.getAccessToken().getValue());
         cloudFileSystemService.init(cloudStorageService);
     }

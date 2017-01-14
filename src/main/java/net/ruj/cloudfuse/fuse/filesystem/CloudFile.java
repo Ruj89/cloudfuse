@@ -1,6 +1,7 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
+import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
 
@@ -66,7 +67,13 @@ public class CloudFile extends CloudPath {
     }
 
     private void changed() {
-        fileEventHandlers.forEach(feh -> feh.fileChanged(null, this));
+        fileEventHandlers.forEach(feh -> {
+            try {
+                feh.fileChanged(null, this);
+            } catch (UploadFileException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public CloudFile addEventHandler(FileEventHandler eventHandler) {
