@@ -3,9 +3,7 @@ package net.ruj.cloudfuse.fuse;
 import jnr.ffi.provider.ClosureManager;
 import jnr.ffi.provider.jffi.NativeRuntime;
 import net.ruj.cloudfuse.clouds.CloudStorageService;
-import net.ruj.cloudfuse.clouds.exceptions.MakeDirectoryException;
-import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
-import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
+import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
@@ -63,14 +61,20 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void fileAdded(CloudDirectory directory, CloudFile file) {
-        logger.info("File added in directory");
+    public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildremException {
+        cloudStorageService.synchronizeChildrenPaths(directory);
+    }
+
+    @Override
+    public void fileAdded(CloudDirectory parent, CloudFile file) throws CreateFileException {
+        cloudStorageService.createFile(parent, file);
+        logger.info("File added in parent");
         file.addEventHandler(this);
     }
 
     @Override
-    public void fileChanged(CloudDirectory parent, CloudFile file) throws UploadFileException {
-        cloudStorageService.uploadFile(parent, file);
+    public void fileChanged(CloudFile file) throws UploadFileException {
+        cloudStorageService.uploadFile(file);
         logger.info("File modified");
     }
 

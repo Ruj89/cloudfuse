@@ -1,9 +1,7 @@
 package net.ruj.cloudfuse.clouds.gdrive;
 
 import net.ruj.cloudfuse.clouds.CloudStorageService;
-import net.ruj.cloudfuse.clouds.exceptions.MakeDirectoryException;
-import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
-import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
+import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.clouds.gdrive.models.File;
 import net.ruj.cloudfuse.clouds.gdrive.models.FileList;
 import net.ruj.cloudfuse.fuse.FuseConfiguration;
@@ -27,6 +25,7 @@ import java.util.ArrayList;
 
 public class GDriveService implements CloudStorageService {
     private static final Logger logger = LoggerFactory.getLogger(GDriveService.class);
+    private static final String GOOGLE_APPS_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
     private final RestTemplate restTemplate;
     private String token;
 
@@ -43,27 +42,39 @@ public class GDriveService implements CloudStorageService {
         );
     }
 
+    @Override
+    public void createFile(CloudDirectory parent, CloudFile file) throws CreateFileException {
+        logger.info("Creating file '" + file.getPath() + "'...");
+        try {
+            String parentId = ((GDriveCloudPathInfo) parent.getCloudPathInfo()).getLinkedFileInfo().getId();
+            File remoteFile = restTemplate.postForObject(
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files")
+                            .build()
+                            .toUri(),
+                    generateFileMetadataRequestEntity(
+                            new File()
+                                    .setName(file.getPath().getFileName().toString())
+                                    .addParents(parentId)
+                    ),
+                    File.class
+            );
+            file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
+        } catch (URISyntaxException e) {
+            throw new CreateFileException(e);
+        }
+    }
+
     //TODO: Byte streams
     @Override
-    public synchronized void uploadFile(CloudDirectory parent, CloudFile file) throws UploadFileException {
-        logger.info("Uploading file '" + file.getPath() + "'...");
+    public synchronized void uploadFile(CloudFile file) throws UploadFileException {
+        logger.info("Updating file '" + file.getPath() + "' content...");
         try {
             File remoteFile = restTemplate.postForObject(
                     this.getGDriveURIComponentsBuilder("/upload/drive/v3/files")
                             .queryParam("uploadType", "media")
                             .build()
                             .toUri(),
-                    generateFileCreateRequestEntity(file.getContents()),
-                    File.class
-            );
-            String parentId = ((GDriveCloudPathInfo) parent.getCloudPathInfo()).getLinkedFileInfo().getId();
-            remoteFile = restTemplate.patchForObject(
-                    this.getGDriveURIComponentsBuilder("/drive/v3/files/" + remoteFile.getId())
-                            .queryParam("addParents", parentId)
-                            .queryParam("removeParents", "root")
-                            .build()
-                            .toUri(),
-                    generateFileMetadataRequestEntity(remoteFile.setName(file.getPath().getFileName().toString())),
+                    generateFileUpdateRequestEntity(file.getContents()),
                     File.class
             );
             file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
@@ -95,9 +106,9 @@ public class GDriveService implements CloudStorageService {
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         ArrayList<String> value = new ArrayList<>();
         value.add("trashed+=+false+and+" +
-                "name+=+'"+fuseConfiguration.getDrive().getRemoteFolder()+"'+and+" +
+                "name+=+'" + fuseConfiguration.getDrive().getRemoteFolder() + "'+and+" +
                 "'root'+in+parents+and+" +
-                "mimeType+=+'application/vnd.google-apps.folder'");
+                "mimeType+=+'" + GOOGLE_APPS_FOLDER_MIME_TYPE + "'");
         params.put("q", value);
         try {
             File remoteFolder = restTemplate.exchange(
@@ -119,6 +130,48 @@ public class GDriveService implements CloudStorageService {
             e.printStackTrace();
             throw new MakeRootException(e);
         }
+    }
+
+    @Override
+    public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildremException {
+        logger.info("Mounting root directory...");
+
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        ArrayList<String> value = new ArrayList<>();
+        String directoryId = ((GDriveCloudPathInfo) directory.getCloudPathInfo()).getLinkedFileInfo().getId();
+        value.add("trashed+=+false+and+" +
+                "'" + directoryId + "'+in+parents");
+        params.put("q", value);
+        try {
+            restTemplate.exchange(
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files")
+                            .queryParams(params)
+                            .build()
+                            .toUri(),
+                    HttpMethod.GET,
+                    generateSearchRequestEntity(),
+                    FileList.class
+            )
+                    .getBody()
+                    .getFiles()
+                    .forEach(f -> {
+                        if (f.getMimeType().equals(GOOGLE_APPS_FOLDER_MIME_TYPE))
+                            synchronizeChildDirectory(directory, f);
+                        else
+                            synchronizeChildFile(directory, f);
+                    });
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            throw new SynchronizeChildremException(e);
+        }
+    }
+
+    private void synchronizeChildFile(CloudDirectory parentDirectory, File file) {
+        parentDirectory.mkfile(file.getName(), new GDriveCloudPathInfo(file));
+    }
+
+    private void synchronizeChildDirectory(CloudDirectory parentDirectory, File file) {
+        parentDirectory.mkdir(file.getName(), new GDriveCloudPathInfo(file));
     }
 
     private File gDriveCreateDirectory(String directoryName) throws URISyntaxException {
@@ -155,12 +208,12 @@ public class GDriveService implements CloudStorageService {
     private HttpEntity<File> generateFolderMetadataRequestEntity(File file) {
         TokenHttpHeaders headers = new TokenHttpHeaders(token);
         return new HttpEntity<>(
-                file.setMimeType("application/vnd.google-apps.folder"),
+                file.setMimeType(GOOGLE_APPS_FOLDER_MIME_TYPE),
                 headers
         );
     }
 
-    private HttpEntity<ByteArrayResource> generateFileCreateRequestEntity(ByteBuffer byteBuffer) {
+    private HttpEntity<ByteArrayResource> generateFileUpdateRequestEntity(ByteBuffer byteBuffer) {
         ByteArrayResource body = new ByteArrayResource(byteBuffer.array());
         TokenHttpHeaders headers = new TokenHttpHeaders(token);
         headers.add(HttpHeaders.CONTENT_TYPE, "application/octet-stream");

@@ -21,11 +21,11 @@ public class CloudFile extends CloudPath {
     @Override
     protected void getattr(FileStat stat) {
         stat.st_mode.set(FileStat.S_IFREG | 0777);
-        stat.st_size.set(contents.capacity());
+        stat.st_size.set(getFileSize());
     }
 
     int read(Pointer buffer, long size, long offset) {
-        int bytesToRead = (int) Math.min(contents.capacity() - offset, size);
+        int bytesToRead = (int) Math.min(getFileSize() - offset, size);
         byte[] bytesRead = new byte[bytesToRead];
         synchronized (this) {
             contents.position((int) offset);
@@ -37,7 +37,7 @@ public class CloudFile extends CloudPath {
     }
 
     synchronized void truncate(long size) {
-        if (size < contents.capacity()) {
+        if (size < getFileSize()) {
             // Need to create a new, smaller buffer
             ByteBuffer newContents = ByteBuffer.allocate((int) size);
             byte[] bytesRead = new byte[(int) size];
@@ -51,7 +51,7 @@ public class CloudFile extends CloudPath {
         int maxWriteIndex = (int) (writeOffset + bufSize);
         byte[] bytesToWrite = new byte[(int) bufSize];
         synchronized (this) {
-            if (maxWriteIndex > contents.capacity()) {
+            if (maxWriteIndex > getFileSize()) {
                 // Need to create a new, larger buffer
                 ByteBuffer newContents = ByteBuffer.allocate(maxWriteIndex);
                 newContents.put(contents);
@@ -61,15 +61,16 @@ public class CloudFile extends CloudPath {
             contents.position((int) writeOffset);
             contents.put(bytesToWrite);
             contents.position(0); // Rewind
+            changed(writeOffset, bytesToWrite);
         }
-        changed();
         return (int) bufSize;
     }
 
-    private void changed() {
+    //TODO: Handle partial changes
+    private void changed(long writeOffset, byte[] bytesToWrite) {
         fileEventHandlers.forEach(feh -> {
             try {
-                feh.fileChanged(parent, this);
+                feh.fileChanged(this);
             } catch (UploadFileException e) {
                 e.printStackTrace();
             }
@@ -95,5 +96,9 @@ public class CloudFile extends CloudPath {
 
     public void setContents(ByteBuffer contents) {
         this.contents = contents;
+    }
+
+    private int getFileSize() {
+        return contents.capacity();
     }
 }

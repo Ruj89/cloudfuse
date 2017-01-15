@@ -1,7 +1,10 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
+import net.ruj.cloudfuse.clouds.CloudPathInfo;
+import net.ruj.cloudfuse.clouds.exceptions.CreateFileException;
 import net.ruj.cloudfuse.clouds.exceptions.MakeDirectoryException;
+import net.ruj.cloudfuse.clouds.exceptions.SynchronizeChildremException;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
@@ -36,6 +39,7 @@ public class CloudDirectory extends CloudPath {
 
     @Override
     protected CloudPath find(String path) {
+        synchronizeChildrenPaths();
         if (super.find(path) != null) {
             return super.find(path);
         }
@@ -68,26 +72,55 @@ public class CloudDirectory extends CloudPath {
     }
 
     synchronized void mkdir(String lastComponent) {
+        mkdir(lastComponent, null);
+    }
+
+    public synchronized void mkdir(String lastComponent, CloudPathInfo cloudPathInfo) {
         CloudDirectory directory = new CloudDirectory(Paths.get(path.toString(), lastComponent), lastComponent, this);
         contents.add(directory);
         this.directoryEventHandlers.forEach(directory::addEventHandler);
-        directoryEventHandlers.forEach(deh -> {
-            try {
-                deh.directoryAdded(this, directory);
-            } catch (MakeDirectoryException e) {
-                e.printStackTrace();
-            }
-        });
+        if (cloudPathInfo == null)
+            directoryEventHandlers.forEach(deh -> {
+                try {
+                    deh.directoryAdded(this, directory);
+                } catch (MakeDirectoryException e) {
+                    e.printStackTrace();
+                }
+            });
+        else directory.setCloudPathInfo(cloudPathInfo);
     }
 
     synchronized void mkfile(String lastComponent) {
+        mkfile(lastComponent, null);
+    }
+
+    public synchronized void mkfile(String lastComponent, CloudPathInfo cloudPathInfo) {
         CloudFile file = new CloudFile(Paths.get(path.toString(), lastComponent), lastComponent, this);
         contents.add(file);
-        directoryEventHandlers.forEach(deh -> deh.fileAdded(this, file));
+        if (cloudPathInfo == null)
+            directoryEventHandlers.forEach(deh -> {
+                try {
+                    deh.fileAdded(this, file);
+                } catch (CreateFileException e) {
+                    e.printStackTrace();
+                }
+            });
+        else file.setCloudPathInfo(cloudPathInfo);
     }
 
     synchronized void read(Pointer buf, FuseFillDir filler) {
         contents.forEach(c -> filler.apply(buf, c.name, null, 0));
+    }
+
+    public void synchronizeChildrenPaths() {
+        contents.clear();
+        directoryEventHandlers.forEach(deh -> {
+            try {
+                deh.synchronizeChildrenPaths(this);
+            } catch (SynchronizeChildremException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public CloudDirectory addEventHandler(DirectoryEventHandler eventHandler) {
