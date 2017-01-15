@@ -78,10 +78,10 @@ public class CloudFile extends CloudPath {
         });
     }
 
-    private long synchronizeSize() throws NoFileEventsFoundException, FileSizeRequestException {
+    private long synchronizeSize() throws NoFileEventsHandlersFoundException, FileSizeRequestException {
         return fileEventHandlers.stream()
                 .findAny()
-                .orElseThrow(NoFileEventsFoundException::new)
+                .orElseThrow(NoFileEventsHandlersFoundException::new)
                 .cloudFileSize(this);
     }
 
@@ -109,7 +109,7 @@ public class CloudFile extends CloudPath {
     private long getFileSize() {
         try {
             return synchronizeSize();
-        } catch (NoFileEventsFoundException | FileSizeRequestException e) {
+        } catch (NoFileEventsHandlersFoundException | FileSizeRequestException e) {
             e.printStackTrace();
             return 0;
         }

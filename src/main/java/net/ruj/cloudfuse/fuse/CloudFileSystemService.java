@@ -2,6 +2,7 @@ package net.ruj.cloudfuse.fuse;
 
 import jnr.ffi.provider.ClosureManager;
 import jnr.ffi.provider.jffi.NativeRuntime;
+import net.ruj.cloudfuse.clouds.CloudPathInfo;
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
@@ -61,6 +62,13 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
+    public void directorySynchronized(CloudDirectory directory, CloudPathInfo cloudPathInfo) {
+        logger.info("Directory synchronized");
+        directory.addEventHandler(this);
+        directory.setCloudPathInfo(cloudPathInfo);
+    }
+
+    @Override
     public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildremException {
         cloudStorageService.synchronizeChildrenPaths(directory);
     }
@@ -70,6 +78,13 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         cloudStorageService.createFile(parent, file);
         logger.info("File added in parent");
         file.addEventHandler(this);
+    }
+
+    @Override
+    public void fileSynchronized(CloudFile file, CloudPathInfo cloudPathInfo) {
+        logger.info("File synchronized");
+        file.addEventHandler(this);
+        file.setCloudPathInfo(cloudPathInfo);
     }
 
     @Override

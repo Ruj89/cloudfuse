@@ -125,7 +125,7 @@ public class GDriveService implements CloudStorageService {
                     .getFiles()
                     .stream()
                     .findAny()
-                    .orElse(gDriveCreateDirectory(fuseConfiguration.getDrive().getRemoteFolder()));
+                    .orElseGet(() -> gDriveCreateDirectory(fuseConfiguration.getDrive().getRemoteFolder()));
             root.setCloudPathInfo(new GDriveCloudPathInfo(remoteFolder));
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -197,8 +197,13 @@ public class GDriveService implements CloudStorageService {
         parentDirectory.mkdir(file.getName(), new GDriveCloudPathInfo(file));
     }
 
-    private File gDriveCreateDirectory(String directoryName) throws URISyntaxException {
-        return this.gDriveCreateDirectory(directoryName, null);
+    private File gDriveCreateDirectory(String directoryName) {
+        try {
+            return this.gDriveCreateDirectory(directoryName, null);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private File gDriveCreateDirectory(String directoryName, String parentId) throws URISyntaxException {

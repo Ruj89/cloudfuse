@@ -87,7 +87,7 @@ public class CloudDirectory extends CloudPath {
                     e.printStackTrace();
                 }
             });
-        else directory.setCloudPathInfo(cloudPathInfo);
+        else directoryEventHandlers.forEach(deh -> deh.directorySynchronized(directory, cloudPathInfo));
     }
 
     synchronized void mkfile(String lastComponent) {
@@ -105,7 +105,7 @@ public class CloudDirectory extends CloudPath {
                     e.printStackTrace();
                 }
             });
-        else file.setCloudPathInfo(cloudPathInfo);
+        else directoryEventHandlers.forEach(deh -> deh.fileSynchronized(file, cloudPathInfo));
     }
 
     synchronized void read(Pointer buf, FuseFillDir filler) {
