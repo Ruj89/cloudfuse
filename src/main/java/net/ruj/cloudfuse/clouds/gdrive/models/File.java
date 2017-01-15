@@ -15,6 +15,8 @@ public class File {
     private String kind;
     private String mimeType;
     private List<String> parents = new ArrayList<>();
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private Long size;
 
     public String getId() {
         return id;
@@ -64,5 +66,13 @@ public class File {
     public File addParents(String parent) {
         this.getParents().add(parent);
         return this;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
     }
 }

@@ -69,8 +69,9 @@ public class GDriveService implements CloudStorageService {
     public synchronized void uploadFile(CloudFile file) throws UploadFileException {
         logger.info("Updating file '" + file.getPath() + "' content...");
         try {
+            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
             File remoteFile = restTemplate.postForObject(
-                    this.getGDriveURIComponentsBuilder("/upload/drive/v3/files")
+                    this.getGDriveURIComponentsBuilder("/upload/drive/v3/files/" + id)
                             .queryParam("uploadType", "media")
                             .build()
                             .toUri(),
@@ -117,7 +118,7 @@ public class GDriveService implements CloudStorageService {
                             .build()
                             .toUri(),
                     HttpMethod.GET,
-                    generateSearchRequestEntity(),
+                    generateGetRequestEntity(),
                     FileList.class
             )
                     .getBody()
@@ -149,7 +150,7 @@ public class GDriveService implements CloudStorageService {
                             .build()
                             .toUri(),
                     HttpMethod.GET,
-                    generateSearchRequestEntity(),
+                    generateGetRequestEntity(),
                     FileList.class
             )
                     .getBody()
@@ -163,6 +164,28 @@ public class GDriveService implements CloudStorageService {
         } catch (URISyntaxException e) {
             e.printStackTrace();
             throw new SynchronizeChildremException(e);
+        }
+    }
+
+    @Override
+    public void synchronizeFileSize(CloudFile file) throws FileSizeRequestException {
+        synchronizeFileInfo(file);
+    }
+
+    private void synchronizeFileInfo(CloudFile file) throws FileSizeRequestException {
+        try {
+            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
+            File remoteFile = restTemplate.exchange(
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
+                            .build()
+                            .toUri(),
+                    HttpMethod.GET,
+                    generateGetRequestEntity(),
+                    File.class
+            ).getBody();
+            file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
+        } catch (URISyntaxException e) {
+            throw new FileSizeRequestException(e);
         }
     }
 
@@ -192,7 +215,7 @@ public class GDriveService implements CloudStorageService {
         );
     }
 
-    private HttpEntity generateSearchRequestEntity() {
+    private HttpEntity generateGetRequestEntity() {
         TokenHttpHeaders headers = new TokenHttpHeaders(token);
         return new HttpEntity(headers);
     }

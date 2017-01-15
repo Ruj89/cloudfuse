@@ -78,6 +78,12 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         logger.info("File modified");
     }
 
+    @Override
+    public long cloudFileSize(CloudFile file) throws FileSizeRequestException {
+        cloudStorageService.synchronizeFileSize(file);
+        return file.getCloudPathInfo().getFileSize();
+    }
+
     public void rootAdded(CloudDirectory root) throws MakeRootException {
         cloudStorageService.makeRoot(root, fuseConfiguration);
     }

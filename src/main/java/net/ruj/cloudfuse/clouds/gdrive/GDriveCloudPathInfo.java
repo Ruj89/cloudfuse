@@ -17,4 +17,9 @@ public class GDriveCloudPathInfo implements CloudPathInfo {
     public void setLinkedFileInfo(File linkedFileInfo) {
         this.linkedFileInfo = linkedFileInfo;
     }
+
+    @Override
+    public long getFileSize() {
+        return linkedFileInfo.getSize();
+    }
 }

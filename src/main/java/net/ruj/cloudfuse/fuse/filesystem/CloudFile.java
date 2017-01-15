@@ -1,6 +1,7 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
+import net.ruj.cloudfuse.clouds.exceptions.FileSizeRequestException;
 import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
@@ -77,6 +78,13 @@ public class CloudFile extends CloudPath {
         });
     }
 
+    private long synchronizeSize() throws NoFileEventsFoundException, FileSizeRequestException {
+        return fileEventHandlers.stream()
+                .findAny()
+                .orElseThrow(NoFileEventsFoundException::new)
+                .cloudFileSize(this);
+    }
+
     public CloudFile addEventHandler(FileEventHandler eventHandler) {
         fileEventHandlers.add(eventHandler);
         return this;
@@ -98,7 +106,12 @@ public class CloudFile extends CloudPath {
         this.contents = contents;
     }
 
-    private int getFileSize() {
-        return contents.capacity();
+    private long getFileSize() {
+        try {
+            return synchronizeSize();
+        } catch (NoFileEventsFoundException | FileSizeRequestException e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 }

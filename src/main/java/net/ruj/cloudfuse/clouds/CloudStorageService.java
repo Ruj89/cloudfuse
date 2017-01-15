@@ -15,4 +15,6 @@ public interface CloudStorageService {
     void makeRoot(CloudDirectory root, FuseConfiguration fuseConfiguration) throws MakeRootException;
 
     void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildremException;
+
+    void synchronizeFileSize(CloudFile file) throws FileSizeRequestException;
 }
