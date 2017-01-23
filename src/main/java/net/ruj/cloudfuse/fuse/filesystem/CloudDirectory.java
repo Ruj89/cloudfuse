@@ -4,7 +4,7 @@ import jnr.ffi.Pointer;
 import net.ruj.cloudfuse.clouds.CloudPathInfo;
 import net.ruj.cloudfuse.clouds.exceptions.CreateFileException;
 import net.ruj.cloudfuse.clouds.exceptions.MakeDirectoryException;
-import net.ruj.cloudfuse.clouds.exceptions.SynchronizeChildremException;
+import net.ruj.cloudfuse.clouds.exceptions.SynchronizeChildrenException;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
@@ -118,7 +118,7 @@ public class CloudDirectory extends CloudPath {
         directoryEventHandlers.forEach(deh -> {
             try {
                 deh.synchronizeChildrenPaths(this);
-            } catch (SynchronizeChildremException e) {
+            } catch (SynchronizeChildrenException e) {
                 e.printStackTrace();
             }
         });

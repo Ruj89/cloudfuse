@@ -7,6 +7,10 @@ import net.ruj.cloudfuse.clouds.gdrive.models.FileList;
 import net.ruj.cloudfuse.fuse.FuseConfiguration;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
@@ -18,10 +22,16 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 public class GDriveService implements CloudStorageService {
     private static final Logger logger = LoggerFactory.getLogger(GDriveService.class);
@@ -49,6 +59,7 @@ public class GDriveService implements CloudStorageService {
             String parentId = ((GDriveCloudPathInfo) parent.getCloudPathInfo()).getLinkedFileInfo().getId();
             File remoteFile = restTemplate.postForObject(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files")
+                            .queryParam("fields", getDefaultFileFieldsQueryValue())
                             .build()
                             .toUri(),
                     generateFileMetadataRequestEntity(
@@ -73,6 +84,7 @@ public class GDriveService implements CloudStorageService {
             File remoteFile = restTemplate.patchForObject(
                     this.getGDriveURIComponentsBuilder("/upload/drive/v3/files/" + id)
                             .queryParam("uploadType", "media")
+                            .queryParam("fields", getDefaultFileFieldsQueryValue())
                             .build()
                             .toUri(),
                     generateFileUpdateRequestEntity(file.getContents()),
@@ -83,6 +95,28 @@ public class GDriveService implements CloudStorageService {
         } catch (URISyntaxException e) {
             e.printStackTrace();
             throw new UploadFileException(e);
+        }
+    }
+
+    @Override
+    public InputStream downloadFile(CloudFile file) throws DownloadFileException {
+        logger.info("Downloading file '" + file.getPath() + "' content...");
+        try {
+            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
+            HttpClient client = HttpClientBuilder.create().build();
+            HttpGet request = new HttpGet(
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
+                            .queryParam("alt", "media")
+                            .build()
+                            .toUri()
+            );
+            request.addHeader(AUTHORIZATION, "Bearer " + token);
+            HttpResponse response = client.execute(request);
+
+            return response.getEntity().getContent();
+        } catch (URISyntaxException | IOException e) {
+            e.printStackTrace();
+            throw new DownloadFileException(e);
         }
     }
 
@@ -133,7 +167,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildremException {
+    public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildrenException {
         logger.info("Synchronizing directory...");
 
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -162,7 +196,7 @@ public class GDriveService implements CloudStorageService {
                     });
         } catch (URISyntaxException e) {
             e.printStackTrace();
-            throw new SynchronizeChildremException(e);
+            throw new SynchronizeChildrenException(e);
         }
     }
 
@@ -176,6 +210,7 @@ public class GDriveService implements CloudStorageService {
             String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
             File remoteFile = restTemplate.exchange(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
+                            .queryParam("fields", getDefaultFileFieldsQueryValue())
                             .build()
                             .toUri(),
                     HttpMethod.GET,
@@ -210,6 +245,7 @@ public class GDriveService implements CloudStorageService {
         if (parentId != null) file = file.addParents(parentId);
         return restTemplate.postForObject(
                 this.getGDriveURIComponentsBuilder("/drive/v3/files")
+                        .queryParam("fields", getDefaultFileFieldsQueryValue())
                         .build()
                         .toUri(),
                 generateFolderMetadataRequestEntity(
@@ -245,6 +281,18 @@ public class GDriveService implements CloudStorageService {
         TokenHttpHeaders headers = new TokenHttpHeaders(token);
         headers.add(HttpHeaders.CONTENT_TYPE, "application/octet-stream");
         return new HttpEntity<>(body, headers);
+    }
+
+    private String getDefaultFileFieldsQueryValue() {
+        return Stream.of(
+                "id",
+                "name",
+                "kind",
+                "mimeType",
+                "parents",
+                "size"
+        )
+                .collect(Collectors.joining(","));
     }
 
     class TokenHttpHeaders extends HttpHeaders {

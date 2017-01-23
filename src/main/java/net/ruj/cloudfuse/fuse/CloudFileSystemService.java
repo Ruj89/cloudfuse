@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
 
@@ -70,7 +71,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildremException {
+    public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildrenException {
         cloudStorageService.synchronizeChildrenPaths(directory);
     }
 
@@ -92,6 +93,13 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     public void fileChanged(CloudFile file) throws UploadFileException {
         cloudStorageService.uploadFile(file);
         logger.info("File modified");
+    }
+
+    @Override
+    public InputStream fileRequested(CloudFile file) throws DownloadFileException {
+        InputStream is = cloudStorageService.downloadFile(file);
+        logger.info("File downloaded");
+        return is;
     }
 
     @Override

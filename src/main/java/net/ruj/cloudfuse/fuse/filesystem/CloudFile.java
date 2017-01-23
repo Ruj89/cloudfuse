@@ -1,11 +1,14 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
+import net.ruj.cloudfuse.clouds.exceptions.DownloadFileException;
 import net.ruj.cloudfuse.clouds.exceptions.FileSizeRequestException;
 import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -30,10 +33,8 @@ public class CloudFile extends CloudPath {
         int bytesToRead = (int) Math.min(getFileSize() - offset, size);
         byte[] bytesRead = new byte[bytesToRead];
         synchronized (this) {
-            contents.position((int) offset);
-            contents.get(bytesRead, 0, bytesToRead);
+            download(offset, bytesRead, bytesToRead);
             buffer.put(0, bytesRead, 0, bytesToRead);
-            contents.position(0); // Rewind
         }
         return bytesToRead;
     }
@@ -63,19 +64,33 @@ public class CloudFile extends CloudPath {
             contents.position((int) writeOffset);
             contents.put(bytesToWrite);
             contents.position(0); // Rewind
-            changed(writeOffset, bytesToWrite);
+            upload(writeOffset, bytesToWrite);
         }
         return (int) bufSize;
     }
 
     //TODO: Handle partial changes
-    private void changed(long writeOffset, byte[] bytesToWrite) {
+    private void upload(long writeOffset, byte[] bytesToWrite) {
         fileEventHandlers.forEach(feh -> {
             try {
                 feh.fileChanged(this);
             } catch (UploadFileException e) {
                 e.printStackTrace();
             }
+        });
+    }
+
+    //TODO: To be updated with a faster method
+    private void download(long offset, byte[] bytesRead, int bytesToRead) {
+        fileEventHandlers.stream().findAny().map(feh -> {
+            try {
+                InputStream is = feh.fileRequested(this);
+
+                return is.read(bytesRead, (int) offset, bytesToRead);
+            } catch (IOException | DownloadFileException e1) {
+                e1.printStackTrace();
+            }
+            return 0;
         });
     }
 
