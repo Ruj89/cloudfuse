@@ -112,6 +112,7 @@ public class CloudDirectory extends CloudPath {
         contents.forEach(c -> filler.apply(buf, c.name, null, 0));
     }
 
+    //TODO: Optimize synchronization
     public void synchronizeChildrenPaths() {
         contents.clear();
         directoryEventHandlers.forEach(deh -> {

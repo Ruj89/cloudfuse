@@ -70,7 +70,7 @@ public class GDriveService implements CloudStorageService {
         logger.info("Updating file '" + file.getPath() + "' content...");
         try {
             String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
-            File remoteFile = restTemplate.postForObject(
+            File remoteFile = restTemplate.patchForObject(
                     this.getGDriveURIComponentsBuilder("/upload/drive/v3/files/" + id)
                             .queryParam("uploadType", "media")
                             .build()
@@ -100,7 +100,6 @@ public class GDriveService implements CloudStorageService {
         }
     }
 
-    //TODO: discover already existent files
     @Override
     public void makeRoot(CloudDirectory root, FuseConfiguration fuseConfiguration) throws MakeRootException {
         logger.info("Mounting root directory...");
@@ -135,7 +134,7 @@ public class GDriveService implements CloudStorageService {
 
     @Override
     public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildremException {
-        logger.info("Mounting root directory...");
+        logger.info("Synchronizing directory...");
 
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         ArrayList<String> value = new ArrayList<>();

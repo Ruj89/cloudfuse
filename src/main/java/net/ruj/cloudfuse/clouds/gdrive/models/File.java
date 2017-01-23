@@ -16,7 +16,7 @@ public class File {
     private String mimeType;
     private List<String> parents = new ArrayList<>();
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private Long size;
+    private Long size = 0L;
 
     public String getId() {
         return id;

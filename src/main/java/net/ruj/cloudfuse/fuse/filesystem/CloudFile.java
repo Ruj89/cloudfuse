@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class CloudFile extends CloudPath {
+    //TODO: remove in-memory contents
     private ByteBuffer contents = ByteBuffer.allocate(0);
     private Set<FileEventHandler> fileEventHandlers = new HashSet<>();
 

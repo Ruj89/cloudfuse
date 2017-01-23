@@ -66,6 +66,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         logger.info("Directory synchronized");
         directory.addEventHandler(this);
         directory.setCloudPathInfo(cloudPathInfo);
+        directory.synchronizeChildrenPaths();
     }
 
     @Override
