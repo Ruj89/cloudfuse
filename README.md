@@ -1,6 +1,6 @@
 # CLOUDFUSE
 
-An Open Source Java 8 and [FUSE](https://github.com/libfuse/libfuse) based virtual file system that mounts a cloud 
+An Open Source Java 8 and FUSE based virtual file system that mounts a cloud 
 storage account to a local Linux folder.
 
 #### Supported cloud storages
@@ -17,9 +17,9 @@ The main jar will be generated in *build\libs* folder.
 ### Prerequisites
 To execute the application in a local environment you need
 * A Linux distribution (ex.: *CentOS 7.1* [[2]](#link-centos) )
-* libFUSE
-* A Java Virtual Machine supporting Java 8 (ex.: *OpenJDK 1.8* [[3]](#link-openjdk))
-* A web client supporting SSL (ex.: *Firefox 50.1* [[4]](#link-firefox))
+* libFUSE [[3]](#link-libfuse)
+* A Java Virtual Machine supporting Java 8 (ex.: *OpenJDK 1.8* [[4]](#link-openjdk))
+* A web client supporting SSL (ex.: *Firefox 50.1* [[5]](#link-firefox))
 
 ### Cloud platforms configurations
 This tutorial will be updated at CloudFuse release time and depends on user localization.
@@ -29,7 +29,7 @@ Google provide a single page guide to follow at: https://developers.google.com/d
 steps are needed.
 
 To link a local folder to a Google Drive account enter in your **Google Developer Console** 
-[[5]](#link-google-developer-console), create a new project specifying a new *Project name*.
+[[6]](#link-google-developer-console), create a new project specifying a new *Project name*.
 
 After that in your Dashboard enable *Google Drive API*.
 
@@ -56,6 +56,7 @@ Using a local web client visit http://localhost:8080/mount and authorize the Goo
 ## Links
 1. <a name="link-gdrive"></a>https://www.google.com/drive
 2. <a name="link-centos"></a>https://www.centos.org/
-3. <a name="link-openjdk"></a>http://openjdk.java.net/
-4. <a name="link-firefox"></a>https://www.mozilla.org/firefox
-5. <a name="link-google-developer-console"></a>https://console.developers.google.com
+3. <a name="link-libfuse"></a>https://github.com/libfuse/libfuse
+4. <a name="link-openjdk"></a>http://openjdk.java.net/
+5. <a name="link-firefox"></a>https://www.mozilla.org/firefox
+6. <a name="link-google-developer-console"></a>https://console.developers.google.com
