@@ -25,6 +25,9 @@ To execute the application in a local environment you need
 This tutorial will be updated at CloudFuse release time and depends on user localization.
 
 #### Google Drive
+Google provide a single page guide to follow at: https://developers.google.com/drive/v3/web/enable-sdk. No additional
+steps are needed.
+
 To link a local folder to a Google Drive account enter in your **Google Developer Console** 
 [[5]](#link-google-developer-console), create a new project specifying a new *Project name*.
 
