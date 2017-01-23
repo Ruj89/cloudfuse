@@ -63,6 +63,12 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
+    public void directoryRemoved(CloudDirectory directory) throws RemoveDirectoryException {
+        cloudStorageService.removeDirectory(directory);
+        logger.info("Directory removed");
+    }
+
+    @Override
     public void directorySynchronized(CloudDirectory directory, CloudPathInfo cloudPathInfo) {
         logger.info("Directory synchronized");
         directory.addEventHandler(this);
@@ -106,6 +112,12 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     public long cloudFileSize(CloudFile file) throws FileSizeRequestException {
         cloudStorageService.synchronizeFileSize(file);
         return file.getCloudPathInfo().getFileSize();
+    }
+
+    @Override
+    public void fileRemoved(CloudFile file) throws RemoveFileException {
+        cloudStorageService.removeFile(file);
+        logger.info("File removed");
     }
 
     public void rootAdded(CloudDirectory root) throws MakeRootException {

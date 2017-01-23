@@ -4,6 +4,7 @@ import jnr.ffi.Pointer;
 import net.ruj.cloudfuse.clouds.CloudPathInfo;
 import net.ruj.cloudfuse.clouds.exceptions.CreateFileException;
 import net.ruj.cloudfuse.clouds.exceptions.MakeDirectoryException;
+import net.ruj.cloudfuse.clouds.exceptions.RemoveDirectoryException;
 import net.ruj.cloudfuse.clouds.exceptions.SynchronizeChildrenException;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import ru.serce.jnrfuse.FuseFillDir;
@@ -110,6 +111,17 @@ public class CloudDirectory extends CloudPath {
 
     synchronized void read(Pointer buf, FuseFillDir filler) {
         contents.forEach(c -> filler.apply(buf, c.name, null, 0));
+    }
+
+    @Override
+    void remove() {
+        directoryEventHandlers.forEach(deh -> {
+            try {
+                deh.directoryRemoved(this);
+            } catch (RemoveDirectoryException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     //TODO: Optimize synchronization

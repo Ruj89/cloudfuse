@@ -26,7 +26,10 @@ public abstract class CloudPath {
             parent.deleteChild(this);
             parent = null;
         }
+        remove();
     }
+
+    abstract void remove();
 
     protected CloudPath find(String path) {
         while (path.startsWith("/")) {

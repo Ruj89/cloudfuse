@@ -3,6 +3,7 @@ package net.ruj.cloudfuse.fuse.filesystem;
 import jnr.ffi.Pointer;
 import net.ruj.cloudfuse.clouds.exceptions.DownloadFileException;
 import net.ruj.cloudfuse.clouds.exceptions.FileSizeRequestException;
+import net.ruj.cloudfuse.clouds.exceptions.RemoveFileException;
 import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
@@ -28,6 +29,7 @@ public class CloudFile extends CloudPath {
         stat.st_mode.set(FileStat.S_IFREG | 0777);
         stat.st_size.set(getFileSize());
     }
+
 
     int read(Pointer buffer, long size, long offset) {
         int bytesToRead = (int) Math.min(getFileSize() - offset, size);
@@ -85,12 +87,22 @@ public class CloudFile extends CloudPath {
         fileEventHandlers.stream().findAny().map(feh -> {
             try {
                 InputStream is = feh.fileRequested(this);
-
                 return is.read(bytesRead, (int) offset, bytesToRead);
-            } catch (IOException | DownloadFileException e1) {
-                e1.printStackTrace();
+            } catch (IOException | DownloadFileException e) {
+                e.printStackTrace();
             }
             return 0;
+        });
+    }
+
+    @Override
+    void remove() {
+        fileEventHandlers.forEach(feh -> {
+            try {
+                feh.fileRemoved(this);
+            } catch (RemoveFileException e) {
+                e.printStackTrace();
+            }
         });
     }
 

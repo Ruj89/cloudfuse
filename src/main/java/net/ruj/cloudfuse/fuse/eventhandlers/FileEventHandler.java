@@ -2,6 +2,7 @@ package net.ruj.cloudfuse.fuse.eventhandlers;
 
 import net.ruj.cloudfuse.clouds.exceptions.DownloadFileException;
 import net.ruj.cloudfuse.clouds.exceptions.FileSizeRequestException;
+import net.ruj.cloudfuse.clouds.exceptions.RemoveFileException;
 import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 
@@ -13,4 +14,6 @@ public interface FileEventHandler {
     InputStream fileRequested(CloudFile cloudFile) throws DownloadFileException;
 
     long cloudFileSize(CloudFile cloudFile) throws FileSizeRequestException;
+
+    void fileRemoved(CloudFile cloudFile) throws RemoveFileException;
 }

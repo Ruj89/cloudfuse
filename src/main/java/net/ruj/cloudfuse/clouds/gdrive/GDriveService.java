@@ -121,6 +121,25 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
+    public void removeFile(CloudFile file) throws RemoveFileException {
+        logger.info("Removing file '" + file.getPath() + "'");
+        try {
+            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
+            restTemplate.exchange(
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
+                            .build()
+                            .toUri(),
+                    HttpMethod.DELETE,
+                    generateDeleteRequestEntity(),
+                    FileList.class
+            );
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            throw new RemoveFileException(e);
+        }
+    }
+
+    @Override
     public void makeDirectory(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
         logger.info("Making folder '" + directory.getPath() + "'...");
         String parentId = ((GDriveCloudPathInfo) parent.getCloudPathInfo()).getLinkedFileInfo().getId();
@@ -131,6 +150,25 @@ public class GDriveService implements CloudStorageService {
         } catch (URISyntaxException e) {
             e.printStackTrace();
             throw new MakeDirectoryException(e);
+        }
+    }
+
+    @Override
+    public void removeDirectory(CloudDirectory directory) throws RemoveDirectoryException {
+        logger.info("Removing directory '" + directory.getPath() + "'");
+        try {
+            String id = ((GDriveCloudPathInfo) directory.getCloudPathInfo()).getLinkedFileInfo().getId();
+            restTemplate.exchange(
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
+                            .build()
+                            .toUri(),
+                    HttpMethod.DELETE,
+                    generateDeleteRequestEntity(),
+                    FileList.class
+            );
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            throw new RemoveDirectoryException(e);
         }
     }
 
@@ -256,6 +294,11 @@ public class GDriveService implements CloudStorageService {
     }
 
     private HttpEntity generateGetRequestEntity() {
+        TokenHttpHeaders headers = new TokenHttpHeaders(token);
+        return new HttpEntity(headers);
+    }
+
+    private HttpEntity generateDeleteRequestEntity() {
         TokenHttpHeaders headers = new TokenHttpHeaders(token);
         return new HttpEntity(headers);
     }

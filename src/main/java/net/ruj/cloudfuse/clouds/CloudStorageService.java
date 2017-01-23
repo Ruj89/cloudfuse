@@ -14,7 +14,11 @@ public interface CloudStorageService {
 
     InputStream downloadFile(CloudFile file) throws DownloadFileException;
 
+    void removeFile(CloudFile file) throws RemoveFileException;
+
     void makeDirectory(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException;
+
+    void removeDirectory(CloudDirectory directory) throws RemoveDirectoryException;
 
     void makeRoot(CloudDirectory root, FuseConfiguration fuseConfiguration) throws MakeRootException;
 
