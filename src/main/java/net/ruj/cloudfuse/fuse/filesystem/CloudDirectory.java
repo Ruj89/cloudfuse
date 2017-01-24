@@ -40,7 +40,6 @@ public class CloudDirectory extends CloudPath {
 
     @Override
     protected CloudPath find(String path) {
-        synchronizeChildrenPaths();
         if (super.find(path) != null) {
             return super.find(path);
         }
@@ -83,12 +82,12 @@ public class CloudDirectory extends CloudPath {
         if (cloudPathInfo == null)
             directoryEventHandlers.forEach(deh -> {
                 try {
-                    deh.directoryAdded(this, directory);
+                    deh.onDirectoryAdded(this, directory);
                 } catch (MakeDirectoryException e) {
                     e.printStackTrace();
                 }
             });
-        else directoryEventHandlers.forEach(deh -> deh.directorySynchronized(directory, cloudPathInfo));
+        else directoryEventHandlers.forEach(deh -> deh.onDirectorySynchronized(directory, cloudPathInfo));
     }
 
     synchronized void mkfile(String lastComponent) {
@@ -101,12 +100,12 @@ public class CloudDirectory extends CloudPath {
         if (cloudPathInfo == null)
             directoryEventHandlers.forEach(deh -> {
                 try {
-                    deh.fileAdded(this, file);
+                    deh.onFileAdded(this, file);
                 } catch (CreateFileException e) {
                     e.printStackTrace();
                 }
             });
-        else directoryEventHandlers.forEach(deh -> deh.fileSynchronized(file, cloudPathInfo));
+        else directoryEventHandlers.forEach(deh -> deh.onFileSynchronized(file, cloudPathInfo));
     }
 
     synchronized void read(Pointer buf, FuseFillDir filler) {
@@ -117,7 +116,7 @@ public class CloudDirectory extends CloudPath {
     void remove() {
         directoryEventHandlers.forEach(deh -> {
             try {
-                deh.directoryRemoved(this);
+                deh.onDirectoryRemoved(this);
             } catch (RemoveDirectoryException e) {
                 e.printStackTrace();
             }

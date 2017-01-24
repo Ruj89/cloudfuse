@@ -27,7 +27,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -176,12 +176,13 @@ public class GDriveService implements CloudStorageService {
     public void makeRoot(CloudDirectory root, FuseConfiguration fuseConfiguration) throws MakeRootException {
         logger.info("Mounting root directory...");
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        ArrayList<String> value = new ArrayList<>();
-        value.add("trashed+=+false+and+" +
-                "name+=+'" + fuseConfiguration.getDrive().getRemoteFolder() + "'+and+" +
-                "'root'+in+parents+and+" +
-                "mimeType+=+'" + GOOGLE_APPS_FOLDER_MIME_TYPE + "'");
-        params.put("q", value);
+        params.put("q", Collections.singletonList(
+                "trashed+=+false+and+" +
+                        "name+=+'" + fuseConfiguration.getDrive().getRemoteFolder() + "'+and+" +
+                        "'root'+in+parents+and+" +
+                        "mimeType+=+'" + GOOGLE_APPS_FOLDER_MIME_TYPE + "'"
+        ));
+        params.put("fields", Collections.singletonList("files(" + getDefaultFileFieldsQueryValue() + ")"));
         try {
             File remoteFolder = restTemplate.exchange(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files")
@@ -198,6 +199,8 @@ public class GDriveService implements CloudStorageService {
                     .findAny()
                     .orElseGet(() -> gDriveCreateDirectory(fuseConfiguration.getDrive().getRemoteFolder()));
             root.setCloudPathInfo(new GDriveCloudPathInfo(remoteFolder));
+            //TODO: Transactional synchronization
+            root.synchronizeChildrenPaths();
         } catch (URISyntaxException e) {
             e.printStackTrace();
             throw new MakeRootException(e);
@@ -209,11 +212,9 @@ public class GDriveService implements CloudStorageService {
         logger.info("Synchronizing directory...");
 
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        ArrayList<String> value = new ArrayList<>();
         String directoryId = ((GDriveCloudPathInfo) directory.getCloudPathInfo()).getLinkedFileInfo().getId();
-        value.add("trashed+=+false+and+" +
-                "'" + directoryId + "'+in+parents");
-        params.put("q", value);
+        params.put("q", Collections.singletonList("trashed+=+false+and+'" + directoryId + "'+in+parents"));
+        params.put("fields", Collections.singletonList("files(" + getDefaultFileFieldsQueryValue() + ")"));
         try {
             restTemplate.exchange(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files")

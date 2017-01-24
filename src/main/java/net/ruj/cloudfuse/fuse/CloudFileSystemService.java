@@ -58,22 +58,52 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void directoryAdded(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
+    public void onDirectoryAdded(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
         cloudStorageService.makeDirectory(parent, directory);
     }
 
     @Override
-    public void directoryRemoved(CloudDirectory directory) throws RemoveDirectoryException {
+    public void onDirectoryRemoved(CloudDirectory directory) throws RemoveDirectoryException {
         cloudStorageService.removeDirectory(directory);
         logger.info("Directory removed");
     }
 
     @Override
-    public void directorySynchronized(CloudDirectory directory, CloudPathInfo cloudPathInfo) {
+    public void onDirectorySynchronized(CloudDirectory directory, CloudPathInfo cloudPathInfo) {
         logger.info("Directory synchronized");
         directory.addEventHandler(this);
         directory.setCloudPathInfo(cloudPathInfo);
         directory.synchronizeChildrenPaths();
+    }
+
+    @Override
+    public void onFileAdded(CloudDirectory parent, CloudFile file) throws CreateFileException {
+        cloudStorageService.createFile(parent, file);
+        logger.info("File added in parent");
+        file.addEventHandler(this);
+    }
+
+    @Override
+    public void onFileSynchronized(CloudFile file, CloudPathInfo cloudPathInfo) {
+        logger.info("File synchronized");
+        file.addEventHandler(this);
+        file.setCloudPathInfo(cloudPathInfo);
+    }
+
+    @Override
+    public void onFileChanged(CloudFile file) throws UploadFileException {
+        cloudStorageService.uploadFile(file);
+        logger.info("File modified");
+    }
+
+    @Override
+    public void onFileRemoved(CloudFile file) throws RemoveFileException {
+        cloudStorageService.removeFile(file);
+        logger.info("File removed");
+    }
+
+    public void onRootMounted(CloudDirectory root) throws MakeRootException {
+        cloudStorageService.makeRoot(root, fuseConfiguration);
     }
 
     @Override
@@ -82,45 +112,14 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void fileAdded(CloudDirectory parent, CloudFile file) throws CreateFileException {
-        cloudStorageService.createFile(parent, file);
-        logger.info("File added in parent");
-        file.addEventHandler(this);
-    }
-
-    @Override
-    public void fileSynchronized(CloudFile file, CloudPathInfo cloudPathInfo) {
-        logger.info("File synchronized");
-        file.addEventHandler(this);
-        file.setCloudPathInfo(cloudPathInfo);
-    }
-
-    @Override
-    public void fileChanged(CloudFile file) throws UploadFileException {
-        cloudStorageService.uploadFile(file);
-        logger.info("File modified");
-    }
-
-    @Override
-    public InputStream fileRequested(CloudFile file) throws DownloadFileException {
-        InputStream is = cloudStorageService.downloadFile(file);
-        logger.info("File downloaded");
-        return is;
-    }
-
-    @Override
-    public long cloudFileSize(CloudFile file) throws FileSizeRequestException {
-        cloudStorageService.synchronizeFileSize(file);
+    public long fileSize(CloudFile file) throws FileSizeRequestException {
         return file.getCloudPathInfo().getFileSize();
     }
 
     @Override
-    public void fileRemoved(CloudFile file) throws RemoveFileException {
-        cloudStorageService.removeFile(file);
-        logger.info("File removed");
-    }
-
-    public void rootAdded(CloudDirectory root) throws MakeRootException {
-        cloudStorageService.makeRoot(root, fuseConfiguration);
+    public InputStream fileInputStream(CloudFile file) throws DownloadFileException {
+        InputStream is = cloudStorageService.downloadFile(file);
+        logger.info("File downloaded");
+        return is;
     }
 }

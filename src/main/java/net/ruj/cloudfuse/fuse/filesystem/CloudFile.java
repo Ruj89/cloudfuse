@@ -75,7 +75,7 @@ public class CloudFile extends CloudPath {
     private void upload(long writeOffset, byte[] bytesToWrite) {
         fileEventHandlers.forEach(feh -> {
             try {
-                feh.fileChanged(this);
+                feh.onFileChanged(this);
             } catch (UploadFileException e) {
                 e.printStackTrace();
             }
@@ -86,7 +86,7 @@ public class CloudFile extends CloudPath {
     private void download(long offset, byte[] bytesRead, int bytesToRead) {
         fileEventHandlers.stream().findAny().map(feh -> {
             try {
-                InputStream is = feh.fileRequested(this);
+                InputStream is = feh.fileInputStream(this);
                 return is.read(bytesRead, (int) offset, bytesToRead);
             } catch (IOException | DownloadFileException e) {
                 e.printStackTrace();
@@ -99,7 +99,7 @@ public class CloudFile extends CloudPath {
     void remove() {
         fileEventHandlers.forEach(feh -> {
             try {
-                feh.fileRemoved(this);
+                feh.onFileRemoved(this);
             } catch (RemoveFileException e) {
                 e.printStackTrace();
             }
@@ -110,7 +110,7 @@ public class CloudFile extends CloudPath {
         return fileEventHandlers.stream()
                 .findAny()
                 .orElseThrow(NoFileEventsHandlersFoundException::new)
-                .cloudFileSize(this);
+                .fileSize(this);
     }
 
     public CloudFile addEventHandler(FileEventHandler eventHandler) {

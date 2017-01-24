@@ -9,15 +9,15 @@ import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 
 public interface DirectoryEventHandler {
-    void fileAdded(CloudDirectory parent, CloudFile file) throws CreateFileException;
+    void onDirectoryAdded(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException;
 
-    void fileSynchronized(CloudFile file, CloudPathInfo cloudPathInfo);
+    void onDirectoryRemoved(CloudDirectory cloudDirectory) throws RemoveDirectoryException;
 
-    void directoryAdded(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException;
+    void onDirectorySynchronized(CloudDirectory directory, CloudPathInfo cloudPathInfo);
 
-    void directoryRemoved(CloudDirectory cloudDirectory) throws RemoveDirectoryException;
+    void onFileAdded(CloudDirectory parent, CloudFile file) throws CreateFileException;
 
-    void directorySynchronized(CloudDirectory directory, CloudPathInfo cloudPathInfo);
+    void onFileSynchronized(CloudFile file, CloudPathInfo cloudPathInfo);
 
     void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildrenException;
 }

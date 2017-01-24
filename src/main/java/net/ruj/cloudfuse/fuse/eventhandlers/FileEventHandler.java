@@ -9,11 +9,11 @@ import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 import java.io.InputStream;
 
 public interface FileEventHandler {
-    void fileChanged(CloudFile file) throws UploadFileException;
+    void onFileChanged(CloudFile file) throws UploadFileException;
 
-    InputStream fileRequested(CloudFile cloudFile) throws DownloadFileException;
+    void onFileRemoved(CloudFile cloudFile) throws RemoveFileException;
 
-    long cloudFileSize(CloudFile cloudFile) throws FileSizeRequestException;
+    InputStream fileInputStream(CloudFile cloudFile) throws DownloadFileException;
 
-    void fileRemoved(CloudFile cloudFile) throws RemoveFileException;
+    long fileSize(CloudFile cloudFile) throws FileSizeRequestException;
 }

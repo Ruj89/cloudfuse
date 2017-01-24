@@ -19,8 +19,8 @@ public class CloudFS extends FuseStubFS {
 
     public CloudFS(CloudFileSystemService cloudFileSystemService) throws MakeRootException {
         rootDirectory = new CloudDirectory(Paths.get("/"), "");
-        cloudFileSystemService.rootAdded(rootDirectory);
         rootDirectory.addEventHandler(cloudFileSystemService);
+        cloudFileSystemService.onRootMounted(rootDirectory);
     }
 
     @Override
