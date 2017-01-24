@@ -123,7 +123,6 @@ public class CloudDirectory extends CloudPath {
         });
     }
 
-    //TODO: Optimize synchronization
     public void synchronizeChildrenPaths() {
         contents.clear();
         directoryEventHandlers.forEach(deh -> {

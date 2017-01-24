@@ -7,6 +7,7 @@ import net.ruj.cloudfuse.clouds.exceptions.RemoveFileException;
 import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -39,15 +40,17 @@ public class CloudFile extends CloudPath {
         return bytesToRead;
     }
 
+    //TODO: To be implemented
     synchronized void truncate(long size) {
-        if (size < getFileSize()) {
+        throw new NotImplementedException();
+        /*if (size < getFileSize()) {
             // Need to create a new, smaller buffer
             ByteBuffer newContents = ByteBuffer.allocate((int) size);
             byte[] bytesRead = new byte[(int) size];
             contents.get(bytesRead);
             newContents.put(bytesRead);
             contents = newContents;
-        }
+        }*/
     }
 
     int write(Pointer buffer, long bufSize, long writeOffset) {
