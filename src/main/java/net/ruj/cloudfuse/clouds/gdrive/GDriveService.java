@@ -1,5 +1,6 @@
 package net.ruj.cloudfuse.clouds.gdrive;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.clouds.gdrive.models.File;
@@ -7,9 +8,12 @@ import net.ruj.cloudfuse.clouds.gdrive.models.FileList;
 import net.ruj.cloudfuse.fuse.FuseConfiguration;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.net.PipeHttpEntity;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,18 +35,19 @@ import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-import static org.springframework.http.HttpHeaders.RANGE;
+import static org.springframework.http.HttpHeaders.*;
 
 public class GDriveService implements CloudStorageService {
     private static final Logger logger = LoggerFactory.getLogger(GDriveService.class);
     private static final String GOOGLE_APPS_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
     private final RestTemplate restTemplate;
+    private final ObjectMapper mapper;
     private String token;
 
     GDriveService(String token) {
         this.token = token;
         this.restTemplate = new RestTemplate();
+        this.mapper = new ObjectMapper();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         restTemplate.setRequestFactory(requestFactory);
     }
@@ -121,6 +126,44 @@ public class GDriveService implements CloudStorageService {
         } catch (URISyntaxException | IOException e) {
             e.printStackTrace();
             throw new DownloadFileException(e);
+        }
+    }
+
+    @Override
+    public void truncateFile(CloudFile file, long size) throws TruncateFileException {
+        logger.info("Downloading file '" + file.getPath() + "' content...");
+        try {
+            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
+            HttpClient downloaderClient = HttpClientBuilder.create().build();
+            HttpGet downloaderRequest = new HttpGet(
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
+                            .queryParam("alt", "media")
+                            .build()
+                            .toUri()
+            );
+            downloaderRequest.addHeader(AUTHORIZATION, "Bearer " + token);
+            HttpResponse downloaderResponse = downloaderClient.execute(downloaderRequest);
+            try (InputStream is = new BoundedInputStream(downloaderResponse.getEntity().getContent(), size)) {
+                HttpClient uploaderClient = HttpClientBuilder.create().build();
+                HttpPatch uploaderRequest = new HttpPatch(
+                        this.getGDriveURIComponentsBuilder("/upload/drive/v3/files/" + id)
+                                .queryParam("uploadType", "media")
+                                .queryParam("fields", getDefaultFileFieldsQueryValue())
+                                .build()
+                                .toUri()
+                );
+                uploaderRequest.addHeader(AUTHORIZATION, "Bearer " + token);
+                uploaderRequest.addHeader(CONTENT_TYPE, "application/octet-stream");
+                uploaderRequest.setEntity(new PipeHttpEntity(is));
+                try (InputStream inputStream = uploaderClient.execute(uploaderRequest).getEntity().getContent()) {
+                    File remoteFile = mapper.readValue(inputStream, File.class);
+                    file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
+                    logger.info("Upload of file '" + remoteFile.getName() + "' completed.");
+                }
+            }
+        } catch (URISyntaxException | IOException e) {
+            e.printStackTrace();
+            throw new TruncateFileException(e);
         }
     }
 
@@ -327,7 +370,7 @@ public class GDriveService implements CloudStorageService {
     private HttpEntity<ByteArrayResource> generateFileUpdateRequestEntity(ByteBuffer byteBuffer) {
         ByteArrayResource body = new ByteArrayResource(byteBuffer.array());
         TokenHttpHeaders headers = new TokenHttpHeaders(token);
-        headers.add(HttpHeaders.CONTENT_TYPE, "application/octet-stream");
+        headers.add(CONTENT_TYPE, "application/octet-stream");
         return new HttpEntity<>(body, headers);
     }
 

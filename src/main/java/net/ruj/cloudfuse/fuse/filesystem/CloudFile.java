@@ -1,13 +1,9 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
-import net.ruj.cloudfuse.clouds.exceptions.DownloadFileException;
-import net.ruj.cloudfuse.clouds.exceptions.FileSizeRequestException;
-import net.ruj.cloudfuse.clouds.exceptions.RemoveFileException;
-import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
+import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -40,17 +36,15 @@ public class CloudFile extends CloudPath {
         return bytesToRead;
     }
 
-    //TODO: To be implemented
     synchronized void truncate(long size) {
-        throw new NotImplementedException();
-        /*if (size < getFileSize()) {
-            // Need to create a new, smaller buffer
-            ByteBuffer newContents = ByteBuffer.allocate((int) size);
-            byte[] bytesRead = new byte[(int) size];
-            contents.get(bytesRead);
-            newContents.put(bytesRead);
-            contents = newContents;
-        }*/
+        fileEventHandlers.stream().findAny().map(feh -> {
+            try {
+                feh.onFileTruncated(this, size);
+            } catch (TruncateFileException e) {
+                e.printStackTrace();
+            }
+            return 0;
+        });
     }
 
     int write(Pointer buffer, long bufSize, long writeOffset) {
@@ -87,7 +81,7 @@ public class CloudFile extends CloudPath {
     private void download(long offset, byte[] bytesRead, int bytesToRead) {
         fileEventHandlers.stream().findAny().map(feh -> {
             try {
-                return feh.read(this, bytesRead, offset, bytesToRead);
+                return feh.onFileRead(this, bytesRead, offset, bytesToRead);
             } catch (DownloadFileException e) {
                 e.printStackTrace();
             }

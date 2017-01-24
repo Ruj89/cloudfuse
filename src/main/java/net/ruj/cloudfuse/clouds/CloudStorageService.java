@@ -12,6 +12,8 @@ public interface CloudStorageService {
 
     int downloadFile(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException;
 
+    void truncateFile(CloudFile file, long size) throws TruncateFileException;
+
     void removeFile(CloudFile file) throws RemoveFileException;
 
     void makeDirectory(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException;

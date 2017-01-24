@@ -116,7 +116,13 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public int read(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException {
+    public void onFileTruncated(CloudFile file, long size) throws TruncateFileException {
+        cloudStorageService.truncateFile(file, size);
+        logger.info("File truncated");
+    }
+
+    @Override
+    public int onFileRead(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException {
         int resultBytes = cloudStorageService.downloadFile(file, bytesRead, offset, bytesToRead);
         logger.info("File downloaded");
         return resultBytes;
