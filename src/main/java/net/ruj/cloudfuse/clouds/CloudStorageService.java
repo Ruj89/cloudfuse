@@ -5,14 +5,12 @@ import net.ruj.cloudfuse.fuse.FuseConfiguration;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 
-import java.io.InputStream;
-
 public interface CloudStorageService {
     void createFile(CloudDirectory parent, CloudFile file) throws CreateFileException;
 
     void uploadFile(CloudFile file) throws UploadFileException;
 
-    InputStream downloadFile(CloudFile file) throws DownloadFileException;
+    int downloadFile(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException;
 
     void removeFile(CloudFile file) throws RemoveFileException;
 

@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.HttpHeaders.RANGE;
 
 public class GDriveService implements CloudStorageService {
     private static final Logger logger = LoggerFactory.getLogger(GDriveService.class);
@@ -99,7 +100,8 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public InputStream downloadFile(CloudFile file) throws DownloadFileException {
+    public int downloadFile(CloudFile file, byte[] bytesRead, long offset, int bytesToRead)
+            throws DownloadFileException {
         logger.info("Downloading file '" + file.getPath() + "' content...");
         try {
             String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
@@ -111,9 +113,11 @@ public class GDriveService implements CloudStorageService {
                             .toUri()
             );
             request.addHeader(AUTHORIZATION, "Bearer " + token);
+            request.addHeader(RANGE, offset + "-" + (offset + bytesToRead));
             HttpResponse response = client.execute(request);
-
-            return response.getEntity().getContent();
+            try (InputStream is = response.getEntity().getContent()) {
+                return is.read(bytesRead, 0, bytesToRead);
+            }
         } catch (URISyntaxException | IOException e) {
             e.printStackTrace();
             throw new DownloadFileException(e);

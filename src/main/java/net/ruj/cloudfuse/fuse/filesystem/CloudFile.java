@@ -8,8 +8,6 @@ import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -86,9 +84,8 @@ public class CloudFile extends CloudPath {
     private void download(long offset, byte[] bytesRead, int bytesToRead) {
         fileEventHandlers.stream().findAny().map(feh -> {
             try {
-                InputStream is = feh.fileInputStream(this);
-                return is.read(bytesRead, (int) offset, bytesToRead);
-            } catch (IOException | DownloadFileException e) {
+                return feh.read(this, bytesRead, offset, bytesToRead);
+            } catch (DownloadFileException e) {
                 e.printStackTrace();
             }
             return 0;

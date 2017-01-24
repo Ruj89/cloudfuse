@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
 
@@ -117,9 +116,9 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public InputStream fileInputStream(CloudFile file) throws DownloadFileException {
-        InputStream is = cloudStorageService.downloadFile(file);
+    public int read(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException {
+        int resultBytes = cloudStorageService.downloadFile(file, bytesRead, offset, bytesToRead);
         logger.info("File downloaded");
-        return is;
+        return resultBytes;
     }
 }
