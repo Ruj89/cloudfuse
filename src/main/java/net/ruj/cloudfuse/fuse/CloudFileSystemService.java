@@ -50,11 +50,11 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         Field parent = findField(asmClassLoader.getClass(), "parent");
         parent.setAccessible(true);
         parent.set(asmClassLoader, Thread.currentThread().getContextClassLoader());
-        cloudFS = new CloudFS(this);
         cloudStorageServices.stream()
                 .filter(CloudStorageService::isReady)
                 .forEach(cloudStorageService -> {
                     try {
+                        cloudFS = new CloudFS(this);
                         cloudStorageService.init(
                                 Paths.get(fuseConfiguration.getDrive().getLocalFolder()),
                                 cloudFS
@@ -174,7 +174,8 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         return resultBytes;
     }
 
-    public void addCloudStorageService(CloudStorageService service) throws MakeRootException, IllegalAccessException {
+    public void addCloudStorageService(CloudStorageService service)
+            throws MakeRootException, IllegalAccessException {
         this.cloudStorageServices.add(service);
         if (fuseConfiguration.isAutomount()) {
             init();
