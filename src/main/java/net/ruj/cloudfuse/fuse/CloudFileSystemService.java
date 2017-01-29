@@ -7,6 +7,7 @@ import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
+import net.ruj.cloudfuse.fuse.exceptions.CloudStorageServiceNotFound;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PreDestroy;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 import static org.springframework.util.ReflectionUtils.findField;
 
@@ -26,15 +28,20 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     private static final Logger logger = LoggerFactory.getLogger(CloudFileSystemService.class);
     private final FuseConfiguration fuseConfiguration;
     private CloudFS cloudFS;
-    private CloudStorageService cloudStorageService;
+    //TODO: handle multiple cloud storages
+    private ArrayList<CloudStorageService> cloudStorageServices = new ArrayList<>();
+    private boolean alreadyInitialized = false;
 
     @Autowired
     public CloudFileSystemService(FuseConfiguration fuseConfiguration) {
         this.fuseConfiguration = fuseConfiguration;
     }
 
-    public void init(CloudStorageService cloudStorageService) throws IllegalAccessException, MakeRootException {
-        this.cloudStorageService = cloudStorageService;
+    public void init() throws MakeRootException, IllegalAccessException {
+        if (alreadyInitialized)
+            return;
+        alreadyInitialized = true;
+
         ClosureManager closureManager = NativeRuntime.getInstance().getClosureManager();
         Field classLoader = findField(closureManager.getClass(), "classLoader");
         classLoader.setAccessible(true);
@@ -43,14 +50,22 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         Field parent = findField(asmClassLoader.getClass(), "parent");
         parent.setAccessible(true);
         parent.set(asmClassLoader, Thread.currentThread().getContextClassLoader());
-
         cloudFS = new CloudFS(this);
-        String localDriveFolder = fuseConfiguration.getDrive().getLocalFolder();
-        logger.info("Mounting Google Drive fuse partition on '" + localDriveFolder + "'...");
-        cloudFS.mount(Paths.get(localDriveFolder), false);
-        logger.info("Google Drive mounted!");
+        cloudStorageServices.stream()
+                .filter(CloudStorageService::isReady)
+                .forEach(cloudStorageService -> {
+                    try {
+                        cloudStorageService.init(
+                                Paths.get(fuseConfiguration.getDrive().getLocalFolder()),
+                                cloudFS
+                        );
+                    } catch (MakeRootException e) {
+                        e.printStackTrace();
+                    }
+                });
     }
 
+    @SuppressWarnings("unused")
     @PreDestroy
     private void destroy() {
         cloudFS.umount();
@@ -58,12 +73,22 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
 
     @Override
     public void onDirectoryAdded(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
-        cloudStorageService.makeDirectory(parent, directory);
+        cloudStorageServices.forEach(css -> {
+                    try {
+                        css.makeDirectory(parent, directory);
+                    } catch (MakeDirectoryException e) {
+                        e.printStackTrace();
+                    }
+                }
+        );
     }
 
     @Override
     public void onDirectoryRemoved(CloudDirectory directory) throws RemoveDirectoryException {
-        cloudStorageService.removeDirectory(directory);
+        cloudStorageServices.stream()
+                .findAny()
+                .orElseThrow(() -> new RemoveDirectoryException(new CloudStorageServiceNotFound()))
+                .removeDirectory(directory);
         logger.info("Directory removed");
     }
 
@@ -77,7 +102,10 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
 
     @Override
     public void onFileAdded(CloudDirectory parent, CloudFile file) throws CreateFileException {
-        cloudStorageService.createFile(parent, file);
+        cloudStorageServices.stream()
+                .findAny()
+                .orElseThrow(() -> new CreateFileException(new CloudStorageServiceNotFound()))
+                .createFile(parent, file);
         logger.info("File added in parent");
         file.addEventHandler(this);
     }
@@ -91,23 +119,35 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
 
     @Override
     public void onFileChanged(CloudFile file, long writeOffset, byte[] bytesToWrite) throws UploadFileException {
-        cloudStorageService.uploadFile(file, writeOffset, bytesToWrite);
+        cloudStorageServices.stream()
+                .findAny()
+                .orElseThrow(() -> new UploadFileException(new CloudStorageServiceNotFound()))
+                .uploadFile(file, writeOffset, bytesToWrite);
         logger.info("File modified");
     }
 
     @Override
     public void onFileRemoved(CloudFile file) throws RemoveFileException {
-        cloudStorageService.removeFile(file);
+        cloudStorageServices.stream()
+                .findAny()
+                .orElseThrow(() -> new RemoveFileException(new CloudStorageServiceNotFound()))
+                .removeFile(file);
         logger.info("File removed");
     }
 
     public void onRootMounted(CloudDirectory root) throws MakeRootException {
-        cloudStorageService.makeRoot(root, fuseConfiguration);
+        cloudStorageServices.stream()
+                .findAny()
+                .orElseThrow(() -> new MakeRootException(new CloudStorageServiceNotFound()))
+                .makeRoot(root, fuseConfiguration);
     }
 
     @Override
     public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildrenException {
-        cloudStorageService.synchronizeChildrenPaths(directory);
+        cloudStorageServices.stream()
+                .findAny()
+                .orElseThrow(() -> new SynchronizeChildrenException(new CloudStorageServiceNotFound()))
+                .synchronizeChildrenPaths(directory);
     }
 
     @Override
@@ -117,14 +157,27 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
 
     @Override
     public void onFileTruncated(CloudFile file, long size) throws TruncateFileException {
-        cloudStorageService.truncateFile(file, size);
+        cloudStorageServices.stream()
+                .findAny()
+                .orElseThrow(() -> new TruncateFileException(new CloudStorageServiceNotFound()))
+                .truncateFile(file, size);
         logger.info("File truncated");
     }
 
     @Override
     public int onFileRead(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException {
-        int resultBytes = cloudStorageService.downloadFile(file, bytesRead, offset, bytesToRead);
+        int resultBytes = cloudStorageServices.stream()
+                .findAny()
+                .orElseThrow(() -> new DownloadFileException(new CloudStorageServiceNotFound()))
+                .downloadFile(file, bytesRead, offset, bytesToRead);
         logger.info("File downloaded");
         return resultBytes;
+    }
+
+    public void addCloudStorageService(CloudStorageService service) throws MakeRootException, IllegalAccessException {
+        this.cloudStorageServices.add(service);
+        if (fuseConfiguration.isAutomount()) {
+            init();
+        }
     }
 }

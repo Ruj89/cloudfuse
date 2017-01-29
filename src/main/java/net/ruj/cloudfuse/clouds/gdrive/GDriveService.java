@@ -5,9 +5,11 @@ import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.clouds.gdrive.models.File;
 import net.ruj.cloudfuse.clouds.gdrive.models.FileList;
+import net.ruj.cloudfuse.database.services.TokenService;
 import net.ruj.cloudfuse.fuse.FuseConfiguration;
 import net.ruj.cloudfuse.fuse.exceptions.CloudPathInfoNotFound;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
+import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 import net.ruj.cloudfuse.net.PipeHttpEntity;
 import net.ruj.cloudfuse.utils.PatchedInputStream;
@@ -27,10 +29,12 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,14 +47,21 @@ public class GDriveService implements CloudStorageService {
     private static final String GOOGLE_APPS_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
     private final RestTemplate restTemplate;
     private final ObjectMapper mapper;
-    private String token;
+    private TokenService tokenService;
 
-    GDriveService(String token) {
-        this.token = token;
+    GDriveService(TokenService tokenService) {
+        this.tokenService = tokenService;
         this.restTemplate = new RestTemplate();
         this.mapper = new ObjectMapper();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         restTemplate.setRequestFactory(requestFactory);
+    }
+
+    @Override
+    public void init(Path mountPoint, CloudFS cloudFS) throws MakeRootException {
+        logger.info("Mounting Google Drive fuse partition on '" + mountPoint.toString() + "'...");
+        cloudFS.mount(mountPoint, false);
+        logger.info("Google Drive mounted!");
     }
 
     @Override
@@ -89,7 +100,7 @@ public class GDriveService implements CloudStorageService {
                             .build()
                             .toUri()
             );
-            downloaderRequest.addHeader(AUTHORIZATION, "Bearer " + token);
+            downloaderRequest.addHeader(AUTHORIZATION, "Bearer " + getTokenString());
             HttpClient uploaderClient = HttpClientBuilder.create().build();
             HttpPatch uploaderRequest = new HttpPatch(
                     this.getGDriveURIComponentsBuilder("/upload/drive/v3/files/" + id)
@@ -98,7 +109,7 @@ public class GDriveService implements CloudStorageService {
                             .build()
                             .toUri()
             );
-            uploaderRequest.addHeader(AUTHORIZATION, "Bearer " + token);
+            uploaderRequest.addHeader(AUTHORIZATION, "Bearer " + getTokenString());
             uploaderRequest.addHeader(CONTENT_TYPE, "application/octet-stream");
             org.apache.http.HttpEntity entity = downloaderClient.execute(downloaderRequest)
                     .getEntity();
@@ -143,7 +154,7 @@ public class GDriveService implements CloudStorageService {
                             .build()
                             .toUri()
             );
-            request.addHeader(AUTHORIZATION, "Bearer " + token);
+            request.addHeader(AUTHORIZATION, "Bearer " + getTokenString());
             request.addHeader(RANGE, offset + "-" + (offset + bytesToRead));
             HttpResponse response = client.execute(request);
             try (InputStream is = response.getEntity().getContent()) {
@@ -167,7 +178,7 @@ public class GDriveService implements CloudStorageService {
                             .build()
                             .toUri()
             );
-            downloaderRequest.addHeader(AUTHORIZATION, "Bearer " + token);
+            downloaderRequest.addHeader(AUTHORIZATION, "Bearer " + getTokenString());
             HttpResponse downloaderResponse = downloaderClient.execute(downloaderRequest);
             try (InputStream is = new BoundedInputStream(downloaderResponse.getEntity().getContent(), size)) {
                 HttpClient uploaderClient = HttpClientBuilder.create().build();
@@ -178,7 +189,7 @@ public class GDriveService implements CloudStorageService {
                                 .build()
                                 .toUri()
                 );
-                uploaderRequest.addHeader(AUTHORIZATION, "Bearer " + token);
+                uploaderRequest.addHeader(AUTHORIZATION, "Bearer " + getTokenString());
                 uploaderRequest.addHeader(CONTENT_TYPE, "application/octet-stream");
                 uploaderRequest.setEntity(new PipeHttpEntity(is, size));
                 try (InputStream inputStream = uploaderClient.execute(uploaderRequest).getEntity().getContent()) {
@@ -317,6 +328,20 @@ public class GDriveService implements CloudStorageService {
         synchronizeFileInfo(file);
     }
 
+    @Override
+    public boolean isReady() {
+        try {
+            getTokenString();
+            return true;
+        } catch (EntityNotFoundException e) {
+            return false;
+        }
+    }
+
+    private String getTokenString() {
+        return tokenService.getTokenString();
+    }
+
     private UriComponentsBuilder getGDriveURIComponentsBuilder(String path) throws URISyntaxException {
         return UriComponentsBuilder.fromUri(
                 new URI("https", "www.googleapis.com", path, "", "")
@@ -374,17 +399,17 @@ public class GDriveService implements CloudStorageService {
     }
 
     private HttpEntity generateGetRequestEntity() {
-        TokenHttpHeaders headers = new TokenHttpHeaders(token);
+        TokenHttpHeaders headers = new TokenHttpHeaders(getTokenString());
         return new HttpEntity(headers);
     }
 
     private HttpEntity generateDeleteRequestEntity() {
-        TokenHttpHeaders headers = new TokenHttpHeaders(token);
+        TokenHttpHeaders headers = new TokenHttpHeaders(getTokenString());
         return new HttpEntity(headers);
     }
 
     private HttpEntity<File> generateFileMetadataRequestEntity(File file) {
-        TokenHttpHeaders headers = new TokenHttpHeaders(token);
+        TokenHttpHeaders headers = new TokenHttpHeaders(getTokenString());
         return new HttpEntity<>(
                 file,
                 headers
@@ -392,7 +417,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     private HttpEntity<File> generateFolderMetadataRequestEntity(File file) {
-        TokenHttpHeaders headers = new TokenHttpHeaders(token);
+        TokenHttpHeaders headers = new TokenHttpHeaders(getTokenString());
         return new HttpEntity<>(
                 file.setMimeType(GOOGLE_APPS_FOLDER_MIME_TYPE),
                 headers

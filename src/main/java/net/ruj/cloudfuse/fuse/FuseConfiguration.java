@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "cloudfuse.fuse.defaults")
 public class FuseConfiguration {
     private DriveConfiguration drive;
+    private boolean automount;
 
     public DriveConfiguration getDrive() {
         return drive;
@@ -15,5 +16,13 @@ public class FuseConfiguration {
 
     public void setDrive(DriveConfiguration drive) {
         this.drive = drive;
+    }
+
+    public boolean isAutomount() {
+        return automount;
+    }
+
+    public void setAutomount(boolean automount) {
+        this.automount = automount;
     }
 }
