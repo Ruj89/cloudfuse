@@ -90,8 +90,8 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void onFileChanged(CloudFile file) throws UploadFileException {
-        cloudStorageService.uploadFile(file);
+    public void onFileChanged(CloudFile file, long writeOffset, byte[] bytesToWrite) throws UploadFileException {
+        cloudStorageService.uploadFile(file, writeOffset, bytesToWrite);
         logger.info("File modified");
     }
 

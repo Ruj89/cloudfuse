@@ -5,14 +5,11 @@ import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.struct.FileStat;
 
-import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
 public class CloudFile extends CloudPath {
-    //TODO: remove in-memory contents
-    private ByteBuffer contents = ByteBuffer.allocate(0);
     private Set<FileEventHandler> fileEventHandlers = new HashSet<>();
 
     CloudFile(Path path, String name, CloudDirectory parent) {
@@ -48,36 +45,24 @@ public class CloudFile extends CloudPath {
     }
 
     int write(Pointer buffer, long bufSize, long writeOffset) {
-        int maxWriteIndex = (int) (writeOffset + bufSize);
         byte[] bytesToWrite = new byte[(int) bufSize];
         synchronized (this) {
-            if (maxWriteIndex > getFileSize()) {
-                // Need to create a new, larger buffer
-                ByteBuffer newContents = ByteBuffer.allocate(maxWriteIndex);
-                newContents.put(contents);
-                contents = newContents;
-            }
             buffer.get(0, bytesToWrite, 0, (int) bufSize);
-            contents.position((int) writeOffset);
-            contents.put(bytesToWrite);
-            contents.position(0); // Rewind
             upload(writeOffset, bytesToWrite);
         }
         return (int) bufSize;
     }
 
-    //TODO: Handle partial changes
     private void upload(long writeOffset, byte[] bytesToWrite) {
         fileEventHandlers.forEach(feh -> {
             try {
-                feh.onFileChanged(this);
+                feh.onFileChanged(this, writeOffset, bytesToWrite);
             } catch (UploadFileException e) {
                 e.printStackTrace();
             }
         });
     }
 
-    //TODO: To be updated with a faster method
     private void download(long offset, byte[] bytesRead, int bytesToRead) {
         fileEventHandlers.stream().findAny().map(feh -> {
             try {
@@ -118,14 +103,6 @@ public class CloudFile extends CloudPath {
 
     public void setPath(Path path) {
         this.path = path;
-    }
-
-    public ByteBuffer getContents() {
-        return contents;
-    }
-
-    public void setContents(ByteBuffer contents) {
-        this.contents = contents;
     }
 
     private long getFileSize() {

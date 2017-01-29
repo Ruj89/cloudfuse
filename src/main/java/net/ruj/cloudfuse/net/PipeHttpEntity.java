@@ -9,9 +9,15 @@ import java.io.OutputStream;
 
 public class PipeHttpEntity extends AbstractHttpEntity {
     private InputStream inputStream;
+    private long contentLength = -1;
 
     public PipeHttpEntity(InputStream inputStream) {
         this.inputStream = inputStream;
+    }
+
+    public PipeHttpEntity(InputStream inputStream, long contentLength) {
+        this.inputStream = inputStream;
+        this.contentLength = contentLength;
     }
 
     @Override
@@ -21,7 +27,7 @@ public class PipeHttpEntity extends AbstractHttpEntity {
 
     @Override
     public long getContentLength() {
-        return -1;
+        return contentLength;
     }
 
     @Override
@@ -31,7 +37,7 @@ public class PipeHttpEntity extends AbstractHttpEntity {
 
     @Override
     public void writeTo(OutputStream outstream) throws IOException {
-        IOUtils.copy(inputStream, outstream);
+        IOUtils.copyLarge(inputStream, outstream);
     }
 
     @Override

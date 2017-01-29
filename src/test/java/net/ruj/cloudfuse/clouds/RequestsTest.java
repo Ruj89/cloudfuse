@@ -1,4 +1,4 @@
-package net.ruj.cloudfuse;
+package net.ruj.cloudfuse.clouds;
 
 import org.assertj.core.api.Assertions;
 import org.junit.Test;

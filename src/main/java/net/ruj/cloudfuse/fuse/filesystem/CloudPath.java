@@ -1,6 +1,8 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
 import net.ruj.cloudfuse.clouds.CloudPathInfo;
+import net.ruj.cloudfuse.clouds.gdrive.GDriveCloudPathInfo;
+import net.ruj.cloudfuse.fuse.exceptions.CloudPathInfoNotFound;
 import ru.serce.jnrfuse.struct.FileStat;
 
 import java.nio.file.Path;
@@ -64,5 +66,11 @@ public abstract class CloudPath {
 
     public void setCloudPathInfo(CloudPathInfo cloudPathInfo) {
         this.cloudPathInfo = cloudPathInfo;
+    }
+
+    public String extractPathId() throws CloudPathInfoNotFound {
+        if (cloudPathInfo instanceof GDriveCloudPathInfo)
+            return ((GDriveCloudPathInfo) getCloudPathInfo()).getLinkedFileInfo().getId();
+        throw new CloudPathInfoNotFound();
     }
 }

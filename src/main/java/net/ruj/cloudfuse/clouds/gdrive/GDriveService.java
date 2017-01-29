@@ -6,9 +6,11 @@ import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.clouds.gdrive.models.File;
 import net.ruj.cloudfuse.clouds.gdrive.models.FileList;
 import net.ruj.cloudfuse.fuse.FuseConfiguration;
+import net.ruj.cloudfuse.fuse.exceptions.CloudPathInfoNotFound;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 import net.ruj.cloudfuse.net.PipeHttpEntity;
+import net.ruj.cloudfuse.utils.PatchedInputStream;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -17,7 +19,6 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -30,13 +31,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.springframework.http.HttpHeaders.*;
 
+//TODO: Separate contexts
 public class GDriveService implements CloudStorageService {
     private static final Logger logger = LoggerFactory.getLogger(GDriveService.class);
     private static final String GOOGLE_APPS_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
@@ -52,17 +53,11 @@ public class GDriveService implements CloudStorageService {
         restTemplate.setRequestFactory(requestFactory);
     }
 
-    private UriComponentsBuilder getGDriveURIComponentsBuilder(String path) throws URISyntaxException {
-        return UriComponentsBuilder.fromUri(
-                new URI("https", "www.googleapis.com", path, "", "")
-        );
-    }
-
     @Override
     public void createFile(CloudDirectory parent, CloudFile file) throws CreateFileException {
         logger.info("Creating file '" + file.getPath() + "'...");
         try {
-            String parentId = ((GDriveCloudPathInfo) parent.getCloudPathInfo()).getLinkedFileInfo().getId();
+            String parentId = parent.extractPathId();
             File remoteFile = restTemplate.postForObject(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files")
                             .queryParam("fields", getDefaultFileFieldsQueryValue())
@@ -76,29 +71,60 @@ public class GDriveService implements CloudStorageService {
                     File.class
             );
             file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | CloudPathInfoNotFound e) {
             throw new CreateFileException(e);
         }
     }
 
-    //TODO: Byte streams
     @Override
-    public synchronized void uploadFile(CloudFile file) throws UploadFileException {
-        logger.info("Updating file '" + file.getPath() + "' content...");
+    public synchronized void uploadFile(CloudFile file, long writeOffset, byte[] bytesToWrite)
+            throws UploadFileException {
+        logger.info("Downloading file '" + file.getPath() + "' content...");
         try {
-            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
-            File remoteFile = restTemplate.patchForObject(
+            String id = file.extractPathId();
+            HttpClient downloaderClient = HttpClientBuilder.create().build();
+            HttpGet downloaderRequest = new HttpGet(
+                    this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
+                            .queryParam("alt", "media")
+                            .build()
+                            .toUri()
+            );
+            downloaderRequest.addHeader(AUTHORIZATION, "Bearer " + token);
+            HttpClient uploaderClient = HttpClientBuilder.create().build();
+            HttpPatch uploaderRequest = new HttpPatch(
                     this.getGDriveURIComponentsBuilder("/upload/drive/v3/files/" + id)
                             .queryParam("uploadType", "media")
                             .queryParam("fields", getDefaultFileFieldsQueryValue())
                             .build()
-                            .toUri(),
-                    generateFileUpdateRequestEntity(file.getContents()),
-                    File.class
+                            .toUri()
             );
-            file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
-            logger.info("Upload of file '" + remoteFile.getName() + "' completed.");
-        } catch (URISyntaxException e) {
+            uploaderRequest.addHeader(AUTHORIZATION, "Bearer " + token);
+            uploaderRequest.addHeader(CONTENT_TYPE, "application/octet-stream");
+            org.apache.http.HttpEntity entity = downloaderClient.execute(downloaderRequest)
+                    .getEntity();
+            try (
+                    InputStream downloadedInputStream = entity.getContent()
+            ) {
+                PatchedInputStream patchedInputStream = new PatchedInputStream(
+                        downloadedInputStream,
+                        bytesToWrite,
+                        (int) writeOffset
+                );
+                uploaderRequest.setEntity(new PipeHttpEntity(
+                        patchedInputStream,
+                        patchedInputStream.calculateSize(entity.getContentLength())
+                ));
+                try (
+                        InputStream inputStream = uploaderClient.execute(uploaderRequest)
+                                .getEntity()
+                                .getContent()
+                ) {
+                    File remoteFile = mapper.readValue(inputStream, File.class);
+                    file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
+                    logger.info("Upload of file '" + remoteFile.getName() + "' completed.");
+                }
+            }
+        } catch (URISyntaxException | IOException | CloudPathInfoNotFound e) {
             e.printStackTrace();
             throw new UploadFileException(e);
         }
@@ -109,7 +135,7 @@ public class GDriveService implements CloudStorageService {
             throws DownloadFileException {
         logger.info("Downloading file '" + file.getPath() + "' content...");
         try {
-            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
+            String id = file.extractPathId();
             HttpClient client = HttpClientBuilder.create().build();
             HttpGet request = new HttpGet(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
@@ -123,7 +149,7 @@ public class GDriveService implements CloudStorageService {
             try (InputStream is = response.getEntity().getContent()) {
                 return is.read(bytesRead, 0, bytesToRead);
             }
-        } catch (URISyntaxException | IOException e) {
+        } catch (URISyntaxException | IOException | CloudPathInfoNotFound e) {
             e.printStackTrace();
             throw new DownloadFileException(e);
         }
@@ -133,7 +159,7 @@ public class GDriveService implements CloudStorageService {
     public void truncateFile(CloudFile file, long size) throws TruncateFileException {
         logger.info("Downloading file '" + file.getPath() + "' content...");
         try {
-            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
+            String id = file.extractPathId();
             HttpClient downloaderClient = HttpClientBuilder.create().build();
             HttpGet downloaderRequest = new HttpGet(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
@@ -154,14 +180,14 @@ public class GDriveService implements CloudStorageService {
                 );
                 uploaderRequest.addHeader(AUTHORIZATION, "Bearer " + token);
                 uploaderRequest.addHeader(CONTENT_TYPE, "application/octet-stream");
-                uploaderRequest.setEntity(new PipeHttpEntity(is));
+                uploaderRequest.setEntity(new PipeHttpEntity(is, size));
                 try (InputStream inputStream = uploaderClient.execute(uploaderRequest).getEntity().getContent()) {
                     File remoteFile = mapper.readValue(inputStream, File.class);
                     file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
                     logger.info("Upload of file '" + remoteFile.getName() + "' completed.");
                 }
             }
-        } catch (URISyntaxException | IOException e) {
+        } catch (URISyntaxException | IOException | CloudPathInfoNotFound e) {
             e.printStackTrace();
             throw new TruncateFileException(e);
         }
@@ -171,7 +197,7 @@ public class GDriveService implements CloudStorageService {
     public void removeFile(CloudFile file) throws RemoveFileException {
         logger.info("Removing file '" + file.getPath() + "'");
         try {
-            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
+            String id = file.extractPathId();
             restTemplate.exchange(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
                             .build()
@@ -180,7 +206,7 @@ public class GDriveService implements CloudStorageService {
                     generateDeleteRequestEntity(),
                     FileList.class
             );
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | CloudPathInfoNotFound e) {
             e.printStackTrace();
             throw new RemoveFileException(e);
         }
@@ -189,12 +215,12 @@ public class GDriveService implements CloudStorageService {
     @Override
     public void makeDirectory(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
         logger.info("Making folder '" + directory.getPath() + "'...");
-        String parentId = ((GDriveCloudPathInfo) parent.getCloudPathInfo()).getLinkedFileInfo().getId();
         try {
+            String parentId = parent.extractPathId();
             File remoteFolder = gDriveCreateDirectory(directory.getPath().getFileName().toString(), parentId);
             directory.setCloudPathInfo(new GDriveCloudPathInfo(remoteFolder));
             logger.info("Folder '" + remoteFolder.getName() + "' created successfully.");
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | CloudPathInfoNotFound e) {
             e.printStackTrace();
             throw new MakeDirectoryException(e);
         }
@@ -204,7 +230,7 @@ public class GDriveService implements CloudStorageService {
     public void removeDirectory(CloudDirectory directory) throws RemoveDirectoryException {
         logger.info("Removing directory '" + directory.getPath() + "'");
         try {
-            String id = ((GDriveCloudPathInfo) directory.getCloudPathInfo()).getLinkedFileInfo().getId();
+            String id = directory.extractPathId();
             restTemplate.exchange(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
                             .build()
@@ -213,7 +239,7 @@ public class GDriveService implements CloudStorageService {
                     generateDeleteRequestEntity(),
                     FileList.class
             );
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | CloudPathInfoNotFound e) {
             e.printStackTrace();
             throw new RemoveDirectoryException(e);
         }
@@ -258,11 +284,11 @@ public class GDriveService implements CloudStorageService {
     public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildrenException {
         logger.info("Synchronizing directory...");
 
-        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        String directoryId = ((GDriveCloudPathInfo) directory.getCloudPathInfo()).getLinkedFileInfo().getId();
-        params.put("q", Collections.singletonList("trashed+=+false+and+'" + directoryId + "'+in+parents"));
-        params.put("fields", Collections.singletonList("files(" + getDefaultFileFieldsQueryValue() + ")"));
         try {
+            LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            String directoryId = directory.extractPathId();
+            params.put("q", Collections.singletonList("trashed+=+false+and+'" + directoryId + "'+in+parents"));
+            params.put("fields", Collections.singletonList("files(" + getDefaultFileFieldsQueryValue() + ")"));
             restTemplate.exchange(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files")
                             .queryParams(params)
@@ -280,7 +306,7 @@ public class GDriveService implements CloudStorageService {
                         else
                             synchronizeChildFile(directory, f);
                     });
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | CloudPathInfoNotFound e) {
             e.printStackTrace();
             throw new SynchronizeChildrenException(e);
         }
@@ -291,9 +317,15 @@ public class GDriveService implements CloudStorageService {
         synchronizeFileInfo(file);
     }
 
+    private UriComponentsBuilder getGDriveURIComponentsBuilder(String path) throws URISyntaxException {
+        return UriComponentsBuilder.fromUri(
+                new URI("https", "www.googleapis.com", path, "", "")
+        );
+    }
+
     private void synchronizeFileInfo(CloudFile file) throws FileSizeRequestException {
         try {
-            String id = ((GDriveCloudPathInfo) file.getCloudPathInfo()).getLinkedFileInfo().getId();
+            String id = file.extractPathId();
             File remoteFile = restTemplate.exchange(
                     this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
                             .queryParam("fields", getDefaultFileFieldsQueryValue())
@@ -304,7 +336,7 @@ public class GDriveService implements CloudStorageService {
                     File.class
             ).getBody();
             file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | CloudPathInfoNotFound e) {
             throw new FileSizeRequestException(e);
         }
     }
@@ -365,13 +397,6 @@ public class GDriveService implements CloudStorageService {
                 file.setMimeType(GOOGLE_APPS_FOLDER_MIME_TYPE),
                 headers
         );
-    }
-
-    private HttpEntity<ByteArrayResource> generateFileUpdateRequestEntity(ByteBuffer byteBuffer) {
-        ByteArrayResource body = new ByteArrayResource(byteBuffer.array());
-        TokenHttpHeaders headers = new TokenHttpHeaders(token);
-        headers.add(CONTENT_TYPE, "application/octet-stream");
-        return new HttpEntity<>(body, headers);
     }
 
     private String getDefaultFileFieldsQueryValue() {

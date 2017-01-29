@@ -4,7 +4,7 @@ import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 
 public interface FileEventHandler {
-    void onFileChanged(CloudFile file) throws UploadFileException;
+    void onFileChanged(CloudFile file, long writeOffset, byte[] bytesToWrite) throws UploadFileException;
 
     void onFileRemoved(CloudFile cloudFile) throws RemoveFileException;
 
