@@ -41,15 +41,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         if (alreadyInitialized)
             return;
         alreadyInitialized = true;
-
-        ClosureManager closureManager = NativeRuntime.getInstance().getClosureManager();
-        Field classLoader = findField(closureManager.getClass(), "classLoader");
-        classLoader.setAccessible(true);
-        Object asmClassLoader = classLoader.get(closureManager);
-
-        Field parent = findField(asmClassLoader.getClass(), "parent");
-        parent.setAccessible(true);
-        parent.set(asmClassLoader, Thread.currentThread().getContextClassLoader());
+        initLibFuse();
         cloudStorageServices.stream()
                 .filter(CloudStorageService::isReady)
                 .forEach(cloudStorageService -> {
@@ -63,6 +55,17 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
                         e.printStackTrace();
                     }
                 });
+    }
+
+    private void initLibFuse() throws IllegalAccessException {
+        ClosureManager closureManager = NativeRuntime.getInstance().getClosureManager();
+        Field classLoader = findField(closureManager.getClass(), "classLoader");
+        classLoader.setAccessible(true);
+        Object asmClassLoader = classLoader.get(closureManager);
+
+        Field parent = findField(asmClassLoader.getClass(), "parent");
+        parent.setAccessible(true);
+        parent.set(asmClassLoader, Thread.currentThread().getContextClassLoader());
     }
 
     @SuppressWarnings("unused")
