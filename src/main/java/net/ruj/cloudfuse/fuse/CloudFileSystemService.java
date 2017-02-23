@@ -11,6 +11,10 @@ import net.ruj.cloudfuse.fuse.exceptions.CloudStorageServiceNotFound;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.queues.DownloadQueueItem;
+import net.ruj.cloudfuse.queues.DownloadQueueService;
+import net.ruj.cloudfuse.queues.UploadQueueItem;
+import net.ruj.cloudfuse.queues.UploadQueueService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,21 +24,32 @@ import javax.annotation.PreDestroy;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static org.springframework.util.ReflectionUtils.findField;
 
 @Service
 public class CloudFileSystemService implements DirectoryEventHandler, FileEventHandler {
     private static final Logger logger = LoggerFactory.getLogger(CloudFileSystemService.class);
+
     private final FuseConfiguration fuseConfiguration;
+    private final UploadQueueService uploadQueueService;
+    private final DownloadQueueService downloadQueueService;
+
     private CloudFS cloudFS;
     //TODO: handle multiple cloud storages
     private ArrayList<CloudStorageService> cloudStorageServices = new ArrayList<>();
     private boolean alreadyInitialized = false;
 
     @Autowired
-    public CloudFileSystemService(FuseConfiguration fuseConfiguration) {
+    public CloudFileSystemService(
+            FuseConfiguration fuseConfiguration,
+            UploadQueueService uploadQueueService,
+            DownloadQueueService downloadQueueService) {
         this.fuseConfiguration = fuseConfiguration;
+        this.uploadQueueService = uploadQueueService;
+        this.downloadQueueService = downloadQueueService;
     }
 
     public void init() throws MakeRootException, IllegalAccessException {
@@ -122,10 +137,16 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
 
     @Override
     public void onFileChanged(CloudFile file, long writeOffset, byte[] bytesToWrite) throws UploadFileException {
-        cloudStorageServices.stream()
-                .findAny()
-                .orElseThrow(() -> new UploadFileException(new CloudStorageServiceNotFound()))
-                .uploadFile(file, writeOffset, bytesToWrite);
+        uploadQueueService.queueFile(
+                new UploadQueueItem(
+                        cloudStorageServices.stream()
+                                .findAny()
+                                .orElseThrow(() -> new UploadFileException(new CloudStorageServiceNotFound())),
+                        file,
+                        writeOffset,
+                        bytesToWrite
+                )
+        );
         logger.info("File modified");
     }
 
@@ -169,12 +190,20 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
 
     @Override
     public int onFileRead(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException {
-        int resultBytes = cloudStorageServices.stream()
-                .findAny()
-                .orElseThrow(() -> new DownloadFileException(new CloudStorageServiceNotFound()))
-                .downloadFile(file, bytesRead, offset, bytesToRead);
-        logger.info("File downloaded");
-        return resultBytes;
+        CompletableFuture<Integer> futureTask = downloadQueueService.queueFile(
+                new DownloadQueueItem(
+                        cloudStorageServices.stream()
+                                .findAny()
+                                .orElseThrow(() -> new DownloadFileException(new CloudStorageServiceNotFound())),
+                        file, bytesRead, offset, bytesToRead)
+        );
+        try {
+            int resultBytes = futureTask.get();
+            logger.info("File downloaded");
+            return resultBytes;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new DownloadFileException(e);
+        }
     }
 
     public void addCloudStorageService(CloudStorageService service)

@@ -2,6 +2,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 
 apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'com.github.ben-manes.versions'
 
 apply from: 'oauth2secrets.gradle'
 
@@ -9,7 +10,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 ext {
-    springBootVersion = '1.4.4.RELEASE'
+    springBootVersion = '1.5.1.RELEASE'
 }
 
 processResources {
@@ -33,7 +34,8 @@ buildscript {
     }
 
     dependencies {
-        classpath('org.springframework.boot:spring-boot-gradle-plugin:1.4.4.RELEASE')
+        classpath('org.springframework.boot:spring-boot-gradle-plugin:1.5.1.RELEASE')
+        classpath('com.github.ben-manes:gradle-versions-plugin:0.14.0')
     }
 }
 
@@ -60,14 +62,15 @@ dependencies {
     compile(group: 'joda-time', name: 'joda-time', version: '2.9.7')
 
 
-    compile(group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.8.5')
+    compile(group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.8.6')
 
-    compile(group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.3.4')
+    compile(group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2')
     compile(group: 'commons-io', name: 'commons-io', version: '2.5')
+    compile(group: 'org.apache.commons', name: 'commons-lang3', version: '3.5')
 
     testCompile(
             [group: 'junit', name: 'junit', version: '4.12'],
-            [group: 'org.assertj', name: 'assertj-core', version: '3.6.1'],
+            [group: 'org.assertj', name: 'assertj-core', version: '3.6.0'],
             [group: 'org.springframework', name: 'spring-test', version: '4.3.5.RELEASE']
     )
 }
