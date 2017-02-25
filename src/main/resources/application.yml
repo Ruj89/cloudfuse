@@ -25,7 +25,7 @@ spring:
 cloudfuse:
   fuse:
     defaults:
-      automount: true
+      automount: false
       drive:
         localFolder: /tmp/mnt
         remoteFolder: cloudfuse
