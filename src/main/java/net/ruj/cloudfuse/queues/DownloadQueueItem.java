@@ -21,7 +21,6 @@ public class DownloadQueueItem extends OperationQueueItem {
         this.bytesToRead = bytesToRead;
     }
 
-    @Override
     public byte[] getBytesRead() {
         return bytesRead;
     }
@@ -30,7 +29,6 @@ public class DownloadQueueItem extends OperationQueueItem {
         this.bytesRead = bytesRead;
     }
 
-    @Override
     public long getOffset() {
         return offset;
     }
@@ -39,7 +37,6 @@ public class DownloadQueueItem extends OperationQueueItem {
         this.offset = offset;
     }
 
-    @Override
     public int getBytesToRead() {
         return bytesToRead;
     }
