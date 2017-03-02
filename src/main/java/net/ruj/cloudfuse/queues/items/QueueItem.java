@@ -1,13 +1,14 @@
-package net.ruj.cloudfuse.queues;
+package net.ruj.cloudfuse.queues.items;
 
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 
-public class OperationQueueItem {
+public abstract class QueueItem {
     private final CloudStorageService cloudStorageService;
     private final CloudFile file;
+    private QueueItemState state = QueueItemState.ENQUEUED;
 
-    public OperationQueueItem(
+    QueueItem(
             CloudStorageService cloudStorageService,
             CloudFile file) {
 
@@ -21,5 +22,13 @@ public class OperationQueueItem {
 
     public CloudFile getFile() {
         return file;
+    }
+
+    public QueueItemState getState() {
+        return state;
+    }
+
+    public void setState(QueueItemState state) {
+        this.state = state;
     }
 }

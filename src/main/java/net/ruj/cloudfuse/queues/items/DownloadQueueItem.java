@@ -1,9 +1,9 @@
-package net.ruj.cloudfuse.queues;
+package net.ruj.cloudfuse.queues.items;
 
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 
-public class DownloadQueueItem extends OperationQueueItem {
+public class DownloadQueueItem extends QueueItem {
     private byte[] bytesRead;
     private long offset;
     private int bytesToRead;

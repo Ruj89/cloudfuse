@@ -1,9 +1,9 @@
-package net.ruj.cloudfuse.queues;
+package net.ruj.cloudfuse.queues.items;
 
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 
-public class UploadQueueItem extends OperationQueueItem {
+public class UploadQueueItem extends QueueItem {
     private long writeOffset;
     private byte[] bytesToWrite;
 

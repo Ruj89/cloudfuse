@@ -46,7 +46,7 @@ Rename the `oauth2secrets.gradle.example` file in `oauth2secrets.gradle` and set
     (Google Drive API)
 
 ## Running
-Using CLI create the mounting point folder and execute the result jar:
+Using CLI create the mounting point folder and execute the success jar:
 ```bash
 mkdir /tmp/mnt
 java -jar cloudfuse.jar
