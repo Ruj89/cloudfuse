@@ -139,6 +139,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
                             cloudStorageServices.stream()
                                     .findAny()
                                     .orElseThrow(() -> new UploadFileException(new CloudStorageServiceNotFound())),
+                            queueService,
                             file,
                             writeOffset,
                             bytesToWrite
@@ -200,7 +201,12 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
                             cloudStorageServices.stream()
                                     .findAny()
                                     .orElseThrow(() -> new DownloadFileException(new CloudStorageServiceNotFound())),
-                            file, bytesRead, offset, bytesToRead)
+                            queueService,
+                            file,
+                            bytesRead,
+                            offset,
+                            bytesToRead
+                    )
             );
             QueueItemResult result = futureTask.get();
             if (result.getE() != null)
