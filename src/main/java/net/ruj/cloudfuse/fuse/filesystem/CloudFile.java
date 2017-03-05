@@ -24,7 +24,7 @@ public class CloudFile extends CloudPath {
 
 
     int read(Pointer buffer, long size, long offset) {
-        int bytesToRead = (int) Math.min(getFileSize() - offset, size);
+        int bytesToRead = Math.toIntExact(Math.min(getFileSize() - offset, size));
         byte[] bytesRead = new byte[bytesToRead];
         synchronized (this) {
             download(offset, bytesRead, bytesToRead);
@@ -44,13 +44,13 @@ public class CloudFile extends CloudPath {
         });
     }
 
-    int write(Pointer buffer, long bufSize, long writeOffset) {
-        byte[] bytesToWrite = new byte[(int) bufSize];
+    int write(Pointer buffer, int bufSize, long writeOffset) {
+        byte[] bytesToWrite = new byte[bufSize];
         synchronized (this) {
-            buffer.get(0, bytesToWrite, 0, (int) bufSize);
+            buffer.get(0, bytesToWrite, 0, bufSize);
             upload(writeOffset, bytesToWrite);
         }
-        return (int) bufSize;
+        return bufSize;
     }
 
     private void upload(long writeOffset, byte[] bytesToWrite) {

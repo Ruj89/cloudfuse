@@ -171,6 +171,6 @@ public class CloudFS extends FuseStubFS {
         if (!(p instanceof CloudFile)) {
             return -ErrorCodes.EISDIR();
         }
-        return ((CloudFile) p).write(buf, size, offset);
+        return ((CloudFile) p).write(buf, Math.toIntExact(size), offset);
     }
 }
