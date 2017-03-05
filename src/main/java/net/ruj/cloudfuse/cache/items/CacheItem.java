@@ -8,10 +8,14 @@ public class CacheItem {
     private final byte[] bytes;
     private final long offset;
 
-    public CacheItem(QueueItem queueItem, byte[] bytes, long offset) {
-        this.file = queueItem.getFile();
+    public CacheItem(CloudFile file, byte[] bytes, long offset) {
+        this.file = file;
         this.bytes = bytes;
         this.offset = offset;
+    }
+
+    public CacheItem(QueueItem queueItem, byte[] bytes, long offset) {
+        this(queueItem.getFile(), bytes, offset);
     }
 
     public CloudFile getFile() {

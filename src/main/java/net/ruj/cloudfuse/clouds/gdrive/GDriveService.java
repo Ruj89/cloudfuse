@@ -30,6 +30,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.persistence.EntityNotFoundException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -88,19 +89,11 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public synchronized void uploadFile(CloudFile file, long writeOffset, byte[] bytesToWrite)
+    public synchronized void uploadFile(CloudFile file, byte[] bytesRead, long writeOffset, byte[] bytesToWrite)
             throws UploadFileException {
         logger.info("Downloading file '" + file.getPath() + "' content...");
         try {
             String id = file.extractPathId();
-            HttpClient downloaderClient = HttpClientBuilder.create().build();
-            HttpGet downloaderRequest = new HttpGet(
-                    this.getGDriveURIComponentsBuilder("/drive/v3/files/" + id)
-                            .queryParam("alt", "media")
-                            .build()
-                            .toUri()
-            );
-            downloaderRequest.addHeader(AUTHORIZATION, "Bearer " + getTokenString());
             HttpClient uploaderClient = HttpClientBuilder.create().build();
             HttpPatch uploaderRequest = new HttpPatch(
                     this.getGDriveURIComponentsBuilder("/upload/drive/v3/files/" + id)
@@ -111,19 +104,17 @@ public class GDriveService implements CloudStorageService {
             );
             uploaderRequest.addHeader(AUTHORIZATION, "Bearer " + getTokenString());
             uploaderRequest.addHeader(CONTENT_TYPE, "application/octet-stream");
-            org.apache.http.HttpEntity entity = downloaderClient.execute(downloaderRequest)
-                    .getEntity();
             try (
-                    InputStream downloadedInputStream = entity.getContent()
+                    InputStream downloadedInputStream = new ByteArrayInputStream(bytesRead)
             ) {
                 PatchedInputStream patchedInputStream = new PatchedInputStream(
                         downloadedInputStream,
                         bytesToWrite,
-                        (int) writeOffset
+                        Math.toIntExact(writeOffset)
                 );
                 uploaderRequest.setEntity(new PipeHttpEntity(
                         patchedInputStream,
-                        patchedInputStream.calculateSize(entity.getContentLength())
+                        patchedInputStream.calculateSize(bytesRead.length)
                 ));
                 try (
                         InputStream inputStream = uploaderClient.execute(uploaderRequest)

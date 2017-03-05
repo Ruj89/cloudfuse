@@ -1,5 +1,6 @@
 package net.ruj.cloudfuse.queues.services;
 
+import net.ruj.cloudfuse.cache.exceptions.BiasedStartingOffsetItemException;
 import net.ruj.cloudfuse.cache.services.CacheService;
 import net.ruj.cloudfuse.queues.exceptions.ItemTypeNotServedException;
 import net.ruj.cloudfuse.queues.items.*;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,7 +60,7 @@ public class QueueService {
             ));
             return appendingSupplier;
         } else
-            return new UploadQueueItemSupplier(item);
+            return new UploadQueueItemSupplier(cacheService, item);
     }
 
     private boolean canAppendItem(UploadQueueItemSupplier uqis, UploadQueueItem finalItem) {
@@ -72,7 +74,7 @@ public class QueueService {
         return new DownloadQueueItemSupplier(cacheService, item);
     }
 
-    public void queueItemStateChanged(QueueItem item) {
+    public void queueItemStateChanged(QueueItem item) throws IOException, BiasedStartingOffsetItemException {
         if (item instanceof UploadQueueItem) {
             if (item.getState().equals(QueueItemState.ENDED)) {
                 UploadQueueItem uploadItem = (UploadQueueItem) item;

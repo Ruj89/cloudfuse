@@ -13,7 +13,7 @@ public interface CloudStorageService {
 
     void createFile(CloudDirectory parent, CloudFile file) throws CreateFileException;
 
-    void uploadFile(CloudFile file, long writeOffset, byte[] bytesToWrite) throws UploadFileException;
+    void uploadFile(CloudFile file, byte[] bytesRead, long writeOffset, byte[] bytesToWrite) throws UploadFileException;
 
     int downloadFile(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException;
 

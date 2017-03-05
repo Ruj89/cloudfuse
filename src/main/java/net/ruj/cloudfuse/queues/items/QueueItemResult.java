@@ -1,9 +1,9 @@
 package net.ruj.cloudfuse.queues.items;
 
-public abstract class QueueItemResult<T extends QueueItem> {
+public class QueueItemResult<T extends QueueItem> {
     private final Exception e;
 
-    QueueItemResult(Exception e) {
+    public QueueItemResult(Exception e) {
         this.e = e;
     }
 
