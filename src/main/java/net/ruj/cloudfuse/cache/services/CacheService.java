@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
+//TODO: Limit cache size
 public class CacheService {
     private ArrayList<CacheItem> items = new ArrayList<>();
 
