@@ -78,7 +78,7 @@ public class QueueService {
         if (item instanceof UploadQueueItem) {
             if (item.getState().equals(QueueItemState.ENDED)) {
                 UploadQueueItem uploadItem = (UploadQueueItem) item;
-                cacheService.addQueueItem(item, uploadItem.getBytesToWrite(), uploadItem.getWriteOffset());
+                cacheService.storeQueueItem(item, uploadItem.getBytesToWrite(), uploadItem.getWriteOffset());
             }
         }
     }

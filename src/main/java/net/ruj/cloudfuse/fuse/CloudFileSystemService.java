@@ -11,9 +11,7 @@ import net.ruj.cloudfuse.fuse.exceptions.CloudStorageServiceNotFound;
 import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
-import net.ruj.cloudfuse.queues.exceptions.WrongQueueItemResultTypeException;
-import net.ruj.cloudfuse.queues.items.*;
-import net.ruj.cloudfuse.queues.services.QueueService;
+import net.ruj.cloudfuse.services.AggregatorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +21,6 @@ import javax.annotation.PreDestroy;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
 
 import static org.springframework.util.ReflectionUtils.findField;
 
@@ -32,7 +29,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     private static final Logger logger = LoggerFactory.getLogger(CloudFileSystemService.class);
 
     private final FuseConfiguration fuseConfiguration;
-    private final QueueService queueService;
+    private final AggregatorService aggregatorService;
 
     private CloudFS cloudFS;
     //TODO: handle multiple cloud storages
@@ -42,10 +39,10 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     @Autowired
     public CloudFileSystemService(
             FuseConfiguration fuseConfiguration,
-            QueueService queueService
+            AggregatorService aggregatorService
     ) {
         this.fuseConfiguration = fuseConfiguration;
-        this.queueService = queueService;
+        this.aggregatorService = aggregatorService;
     }
 
     public void init() throws MakeRootException, IllegalAccessException {
@@ -134,22 +131,15 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     @Override
     public void onFileChanged(CloudFile file, long writeOffset, byte[] bytesToWrite) throws UploadFileException {
         try {
-            QueueItemResult result = queueService.enqueueFile(
-                    new UploadQueueItem(
-                            cloudStorageServices.stream()
-                                    .findAny()
-                                    .orElseThrow(() -> new UploadFileException(new CloudStorageServiceNotFound())),
-                            queueService,
-                            file,
-                            writeOffset,
-                            bytesToWrite
-                    )
-            ).get();
-            if (result.getE() != null)
-                throw result.getE();
-            if (result instanceof UploadQueueItemResult) {
-                logger.info("File modified");
-            } else throw new WrongQueueItemResultTypeException();
+            aggregatorService.changeFile(
+                    cloudStorageServices.stream()
+                            .findAny()
+                            .orElseThrow(() -> new UploadFileException(new CloudStorageServiceNotFound())),
+                    file,
+                    writeOffset,
+                    bytesToWrite
+            );
+            logger.info("File modified");
         } catch (Exception e) {
             throw new UploadFileException(e);
         }
@@ -196,26 +186,17 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     @Override
     public int onFileRead(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException {
         try {
-            CompletableFuture<? extends QueueItemResult> futureTask = queueService.enqueueFile(
-                    new DownloadQueueItem(
-                            cloudStorageServices.stream()
-                                    .findAny()
-                                    .orElseThrow(() -> new DownloadFileException(new CloudStorageServiceNotFound())),
-                            queueService,
-                            file,
-                            bytesRead,
-                            offset,
-                            bytesToRead
-                    )
+            int resultBytes = aggregatorService.downloadFile(
+                    cloudStorageServices.stream()
+                            .findAny()
+                            .orElseThrow(() -> new DownloadFileException(new CloudStorageServiceNotFound())),
+                    file,
+                    bytesRead,
+                    offset,
+                    bytesToRead
             );
-            QueueItemResult result = futureTask.get();
-            if (result.getE() != null)
-                throw result.getE();
-            if (result instanceof DownloadQueueItemResult) {
-                int resultBytes = ((DownloadQueueItemResult) result).getFileSize();
-                logger.info("File downloaded");
-                return resultBytes;
-            } else throw new WrongQueueItemResultTypeException();
+            logger.info("File downloaded");
+            return resultBytes;
         } catch (Exception e) {
             throw new DownloadFileException(e);
         }

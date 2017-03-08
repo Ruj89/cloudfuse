@@ -19,7 +19,24 @@ import java.util.Optional;
 public class CacheService {
     private ArrayList<CacheItem> items = new ArrayList<>();
 
-    public void addQueueItem(QueueItem queueItem, byte[] bytes, long offset)
+    public void storeItemChanges(CloudFile file, byte[] bytes, long offset)
+            throws IOException, BiasedStartingOffsetItemException {
+        CacheItem item = new CacheItem(file, bytes, offset);
+        Optional<CacheItem> replacingItemO = itemThatShouldBeReplaced(item);
+        CacheItem finalItem;
+        if (replacingItemO.isPresent()) {
+            CacheItem replacingItem = replacingItemO.get();
+            items.remove(replacingItem);
+            finalItem = joinItems(replacingItem, item);
+        } else {
+            if (item.getOffset() != 0)
+                throw new BiasedStartingOffsetItemException();
+            finalItem = item;
+        }
+        items.add(finalItem);
+    }
+
+    public void storeQueueItem(QueueItem queueItem, byte[] bytes, long offset)
             throws BiasedStartingOffsetItemException, IOException {
         CacheItem item = new CacheItem(queueItem, bytes, offset);
         Optional<CacheItem> replacingItemO = itemThatShouldBeReplaced(item);
