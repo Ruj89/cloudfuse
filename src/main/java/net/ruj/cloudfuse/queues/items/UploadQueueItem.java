@@ -2,7 +2,6 @@ package net.ruj.cloudfuse.queues.items;
 
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
-import net.ruj.cloudfuse.queues.services.QueueService;
 
 public class UploadQueueItem extends QueueItem {
     private long writeOffset;
@@ -10,12 +9,11 @@ public class UploadQueueItem extends QueueItem {
 
     public UploadQueueItem(
             CloudStorageService cloudStorageService,
-            QueueService queueService,
             CloudFile file,
             long writeOffset,
             byte[] bytesToWrite
     ) {
-        super(cloudStorageService, queueService, file);
+        super(cloudStorageService, file);
         this.writeOffset = writeOffset;
         this.bytesToWrite = bytesToWrite;
     }

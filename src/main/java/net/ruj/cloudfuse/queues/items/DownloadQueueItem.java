@@ -2,7 +2,6 @@ package net.ruj.cloudfuse.queues.items;
 
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
-import net.ruj.cloudfuse.queues.services.QueueService;
 
 public class DownloadQueueItem extends QueueItem {
     private byte[] bytesRead;
@@ -11,13 +10,12 @@ public class DownloadQueueItem extends QueueItem {
 
     public DownloadQueueItem(
             CloudStorageService cloudStorageService,
-            QueueService queueService,
             CloudFile file,
             byte[] bytesRead,
             long offset,
             int bytesToRead
     ) {
-        super(cloudStorageService, queueService, file);
+        super(cloudStorageService, file);
         this.bytesRead = bytesRead;
         this.offset = offset;
         this.bytesToRead = bytesToRead;

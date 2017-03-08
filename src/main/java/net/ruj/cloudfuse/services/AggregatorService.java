@@ -1,15 +1,16 @@
 package net.ruj.cloudfuse.services;
 
+import net.ruj.cloudfuse.cache.exceptions.FileNotCachedException;
 import net.ruj.cloudfuse.cache.services.CacheService;
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
-import net.ruj.cloudfuse.queues.exceptions.WrongQueueItemResultTypeException;
-import net.ruj.cloudfuse.queues.items.*;
+import net.ruj.cloudfuse.queues.items.DownloadQueueItem;
+import net.ruj.cloudfuse.queues.items.DownloadQueueItemResult;
+import net.ruj.cloudfuse.queues.items.QueueItemResult;
+import net.ruj.cloudfuse.queues.items.UploadQueueItem;
 import net.ruj.cloudfuse.queues.services.QueueService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.CompletableFuture;
 
 @Service
 public class AggregatorService {
@@ -29,18 +30,14 @@ public class AggregatorService {
             byte[] bytesToWrite
     ) throws Exception {
         cacheService.storeItemChanges(file, bytesToWrite, writeOffset);
-        QueueItemResult result = queueService.enqueueFile(
+        queueService.enqueueItem(
                 new UploadQueueItem(
                         cloudStorageService,
-                        queueService,
                         file,
                         writeOffset,
-                        bytesToWrite)
-        ).get();
-        if (result.getE() != null)
-            throw result.getE();
-        if (!(result instanceof UploadQueueItemResult))
-            throw new WrongQueueItemResultTypeException();
+                        bytesToWrite
+                )
+        );
     }
 
     public int downloadFile(
@@ -50,22 +47,20 @@ public class AggregatorService {
             long offset,
             int bytesToRead
     ) throws Exception {
-        CompletableFuture<? extends QueueItemResult> futureTask = queueService.enqueueFile(
-                new DownloadQueueItem(
-                        cloudStorageService,
-                        queueService,
-                        file,
-                        bytesRead,
-                        offset,
-                        bytesToRead
-                )
-        );
-        QueueItemResult result = futureTask.get();
-        if (result.getE() != null)
-            throw result.getE();
-        if (!(result instanceof DownloadQueueItemResult))
-            throw new WrongQueueItemResultTypeException();
-
-        return ((DownloadQueueItemResult) result).getFileSize();
+        try {
+            return cacheService.downloadCachedItem(file, bytesRead, offset, bytesToRead);
+        } catch (FileNotCachedException ignore) {
+            QueueItemResult result = queueService.enqueueItem(
+                    new DownloadQueueItem(
+                            cloudStorageService,
+                            file,
+                            bytesRead,
+                            offset,
+                            bytesToRead
+                    )
+            ).get();
+            cacheService.storeItemChanges(file, bytesRead, offset);
+            return ((DownloadQueueItemResult) result).getFileSize();
+        }
     }
 }

@@ -1,7 +1,6 @@
 package net.ruj.cloudfuse.cache.items;
 
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
-import net.ruj.cloudfuse.queues.items.QueueItem;
 
 public class CacheItem {
     private final CloudFile file;
@@ -12,10 +11,6 @@ public class CacheItem {
         this.file = file;
         this.bytes = bytes;
         this.offset = offset;
-    }
-
-    public CacheItem(QueueItem queueItem, byte[] bytes, long offset) {
-        this(queueItem.getFile(), bytes, offset);
     }
 
     public CloudFile getFile() {

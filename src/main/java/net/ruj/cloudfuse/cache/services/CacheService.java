@@ -1,10 +1,10 @@
 package net.ruj.cloudfuse.cache.services;
 
 import net.ruj.cloudfuse.cache.exceptions.BiasedStartingOffsetItemException;
+import net.ruj.cloudfuse.cache.exceptions.FileNotCachedException;
 import net.ruj.cloudfuse.cache.items.CacheItem;
 import net.ruj.cloudfuse.clouds.exceptions.DownloadFileException;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
-import net.ruj.cloudfuse.queues.items.QueueItem;
 import net.ruj.cloudfuse.utils.PatchedInputStream;
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Service;
@@ -22,23 +22,6 @@ public class CacheService {
     public void storeItemChanges(CloudFile file, byte[] bytes, long offset)
             throws IOException, BiasedStartingOffsetItemException {
         CacheItem item = new CacheItem(file, bytes, offset);
-        Optional<CacheItem> replacingItemO = itemThatShouldBeReplaced(item);
-        CacheItem finalItem;
-        if (replacingItemO.isPresent()) {
-            CacheItem replacingItem = replacingItemO.get();
-            items.remove(replacingItem);
-            finalItem = joinItems(replacingItem, item);
-        } else {
-            if (item.getOffset() != 0)
-                throw new BiasedStartingOffsetItemException();
-            finalItem = item;
-        }
-        items.add(finalItem);
-    }
-
-    public void storeQueueItem(QueueItem queueItem, byte[] bytes, long offset)
-            throws BiasedStartingOffsetItemException, IOException {
-        CacheItem item = new CacheItem(queueItem, bytes, offset);
         Optional<CacheItem> replacingItemO = itemThatShouldBeReplaced(item);
         CacheItem finalItem;
         if (replacingItemO.isPresent()) {
@@ -78,17 +61,19 @@ public class CacheService {
                 .findAny();
     }
 
-    public Optional<CacheItem> contains(CloudFile file, long offset, int bytesToRead) {
+    private Optional<CacheItem> contains(CloudFile file, long offset, int bytesToRead) {
         return getItemByFile(file)
                 .filter(i -> i.containsRange(offset, bytesToRead));
     }
 
-    public int downloadCachedItem(CacheItem cachedItem, byte[] bytesRead, long offset, int bytesToRead)
-            throws DownloadFileException {
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(cachedItem.getBytes())) {
+    public int downloadCachedItem(CloudFile file, byte[] bytesRead, long offset, int bytesToRead)
+            throws DownloadFileException, FileNotCachedException {
+        CacheItem cacheItem = contains(file, offset, bytesToRead)
+                .orElseThrow(FileNotCachedException::new);
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(cacheItem.getBytes())) {
             return bais.read(
                     bytesRead,
-                    Math.toIntExact(offset - cachedItem.getOffset()),
+                    Math.toIntExact(offset - cacheItem.getOffset()),
                     bytesToRead
             );
         } catch (IOException e) {

@@ -1,17 +1,13 @@
 package net.ruj.cloudfuse.queues.suppliers;
 
-import net.ruj.cloudfuse.cache.services.CacheService;
 import net.ruj.cloudfuse.clouds.exceptions.UploadFileException;
 import net.ruj.cloudfuse.queues.items.DownloadQueueItem;
 import net.ruj.cloudfuse.queues.items.UploadQueueItem;
 import net.ruj.cloudfuse.queues.items.UploadQueueItemResult;
 
 public class UploadQueueItemSupplier extends QueueItemSupplier<UploadQueueItem> {
-    private final CacheService cacheService;
-
-    public UploadQueueItemSupplier(CacheService cacheService, UploadQueueItem item) {
+    public UploadQueueItemSupplier(UploadQueueItem item) {
         super(item);
-        this.cacheService = cacheService;
     }
 
     @Override
@@ -34,7 +30,6 @@ public class UploadQueueItemSupplier extends QueueItemSupplier<UploadQueueItem> 
         int bytesToRead = Math.toIntExact(item.getWriteOffset());
         byte[] bytesRead = new byte[bytesToRead];
         DownloadQueueItemSupplier downloadQueueItemSupplier = new DownloadQueueItemSupplier(
-                cacheService,
                 generatePartialDownloadQueueItem(
                         bytesToRead,
                         bytesRead
@@ -47,7 +42,6 @@ public class UploadQueueItemSupplier extends QueueItemSupplier<UploadQueueItem> 
     private DownloadQueueItem generatePartialDownloadQueueItem(int bytesToRead, byte[] bytes) {
         return new DownloadQueueItem(
                 item.getCloudStorageService(),
-                item.getQueueService(),
                 item.getFile(),
                 bytes,
                 0,

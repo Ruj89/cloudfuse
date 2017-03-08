@@ -1,7 +1,5 @@
 package net.ruj.cloudfuse.queues.services;
 
-import net.ruj.cloudfuse.cache.exceptions.BiasedStartingOffsetItemException;
-import net.ruj.cloudfuse.cache.services.CacheService;
 import net.ruj.cloudfuse.queues.exceptions.ItemTypeNotServedException;
 import net.ruj.cloudfuse.queues.items.*;
 import net.ruj.cloudfuse.queues.suppliers.DownloadQueueItemSupplier;
@@ -9,26 +7,18 @@ import net.ruj.cloudfuse.queues.suppliers.QueueItemSupplier;
 import net.ruj.cloudfuse.queues.suppliers.UploadQueueItemSupplier;
 import org.apache.commons.collections4.list.TreeList;
 import org.apache.commons.lang3.ArrayUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Service
 public class QueueService {
-    private final CacheService cacheService;
     private TreeList<QueueItemSupplier> items = new TreeList<>();
     private ExecutorService executor = Executors.newFixedThreadPool(1);
 
-    @Autowired
-    public QueueService(CacheService cacheService) {
-        this.cacheService = cacheService;
-    }
-
-    public CompletableFuture<? extends QueueItemResult> enqueueFile(QueueItem item) throws ItemTypeNotServedException {
+    public CompletableFuture<? extends QueueItemResult> enqueueItem(QueueItem item) throws ItemTypeNotServedException {
         QueueItemSupplier<? extends QueueItem> supplier = generateSupplierByItemType(item);
         items.add(supplier);
         return CompletableFuture.supplyAsync(supplier, executor);
@@ -60,7 +50,7 @@ public class QueueService {
             ));
             return appendingSupplier;
         } else
-            return new UploadQueueItemSupplier(cacheService, item);
+            return new UploadQueueItemSupplier(item);
     }
 
     private boolean canAppendItem(UploadQueueItemSupplier uqis, UploadQueueItem finalItem) {
@@ -71,15 +61,6 @@ public class QueueService {
     }
 
     private DownloadQueueItemSupplier generateDownloadItemQueueSupplier(DownloadQueueItem item) {
-        return new DownloadQueueItemSupplier(cacheService, item);
-    }
-
-    public void queueItemStateChanged(QueueItem item) throws IOException, BiasedStartingOffsetItemException {
-        if (item instanceof UploadQueueItem) {
-            if (item.getState().equals(QueueItemState.ENDED)) {
-                UploadQueueItem uploadItem = (UploadQueueItem) item;
-                cacheService.storeQueueItem(item, uploadItem.getBytesToWrite(), uploadItem.getWriteOffset());
-            }
-        }
+        return new DownloadQueueItemSupplier(item);
     }
 }
