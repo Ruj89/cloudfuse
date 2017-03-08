@@ -21,6 +21,8 @@ import javax.annotation.PreDestroy;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.springframework.util.ReflectionUtils.findField;
 
@@ -84,23 +86,32 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
 
     @Override
     public void onDirectoryAdded(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
-        cloudStorageServices.forEach(css -> {
+        Optional<MakeDirectoryException> eO = cloudStorageServices.stream()
+                .map(css -> {
                     try {
                         css.makeDirectory(parent, directory);
+                        return null;
                     } catch (MakeDirectoryException e) {
-                        e.printStackTrace();
+                        return e;
                     }
-                }
-        );
+                })
+                .filter(Objects::nonNull)
+                .findAny();
+        if (eO.isPresent())
+            throw eO.get();
     }
 
     @Override
     public void onDirectoryRemoved(CloudDirectory directory) throws RemoveDirectoryException {
-        cloudStorageServices.stream()
-                .findAny()
-                .orElseThrow(() -> new RemoveDirectoryException(new CloudStorageServiceNotFound()))
-                .removeDirectory(directory);
-        logger.info("Directory removed");
+        try {
+            cloudStorageServices.stream()
+                    .findAny()
+                    .orElseThrow(CloudStorageServiceNotFound::new)
+                    .removeDirectory(directory);
+            logger.info("Directory removed");
+        } catch (Exception e) {
+            throw new RemoveDirectoryException(e);
+        }
     }
 
     @Override
@@ -113,12 +124,16 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
 
     @Override
     public void onFileAdded(CloudDirectory parent, CloudFile file) throws CreateFileException {
-        cloudStorageServices.stream()
-                .findAny()
-                .orElseThrow(() -> new CreateFileException(new CloudStorageServiceNotFound()))
-                .createFile(parent, file);
-        logger.info("File added in parent");
-        file.addEventHandler(this);
+        try {
+            cloudStorageServices.stream()
+                    .findAny()
+                    .orElseThrow(CloudStorageServiceNotFound::new)
+                    .createFile(parent, file);
+            logger.info("File added in parent");
+            file.addEventHandler(this);
+        } catch (Exception e) {
+            throw new CreateFileException(e);
+        }
     }
 
     @Override
@@ -134,7 +149,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
             aggregatorService.changeFile(
                     cloudStorageServices.stream()
                             .findAny()
-                            .orElseThrow(() -> new UploadFileException(new CloudStorageServiceNotFound())),
+                            .orElseThrow(CloudStorageServiceNotFound::new),
                     file,
                     writeOffset,
                     bytesToWrite
@@ -147,40 +162,60 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
 
     @Override
     public void onFileRemoved(CloudFile file) throws RemoveFileException {
-        cloudStorageServices.stream()
-                .findAny()
-                .orElseThrow(() -> new RemoveFileException(new CloudStorageServiceNotFound()))
-                .removeFile(file);
-        logger.info("File removed");
+        try {
+            cloudStorageServices.stream()
+                    .findAny()
+                    .orElseThrow(CloudStorageServiceNotFound::new)
+                    .removeFile(file);
+            logger.info("File removed");
+        } catch (Exception e) {
+            throw new RemoveFileException(e);
+        }
     }
 
     public void onRootMounted(CloudDirectory root) throws MakeRootException {
-        cloudStorageServices.stream()
-                .findAny()
-                .orElseThrow(() -> new MakeRootException(new CloudStorageServiceNotFound()))
-                .makeRoot(root, fuseConfiguration);
+        try {
+            cloudStorageServices.stream()
+                    .findAny()
+                    .orElseThrow(CloudStorageServiceNotFound::new)
+                    .makeRoot(root, fuseConfiguration);
+        } catch (Exception e) {
+            throw new MakeRootException(e);
+        }
     }
 
     @Override
     public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildrenException {
-        cloudStorageServices.stream()
-                .findAny()
-                .orElseThrow(() -> new SynchronizeChildrenException(new CloudStorageServiceNotFound()))
-                .synchronizeChildrenPaths(directory);
+        try {
+            cloudStorageServices.stream()
+                    .findAny()
+                    .orElseThrow(CloudStorageServiceNotFound::new)
+                    .synchronizeChildrenPaths(directory);
+        } catch (Exception e) {
+            throw new SynchronizeChildrenException(e);
+        }
     }
 
     @Override
     public long fileSize(CloudFile file) throws FileSizeRequestException {
-        return file.getCloudPathInfo().getFileSize();
+        try {
+            return file.getCloudPathInfo().getFileSize();
+        } catch (Exception e) {
+            throw new FileSizeRequestException(e);
+        }
     }
 
     @Override
     public void onFileTruncated(CloudFile file, long size) throws TruncateFileException {
-        cloudStorageServices.stream()
-                .findAny()
-                .orElseThrow(() -> new TruncateFileException(new CloudStorageServiceNotFound()))
-                .truncateFile(file, size);
-        logger.info("File truncated");
+        try {
+            cloudStorageServices.stream()
+                    .findAny()
+                    .orElseThrow(CloudStorageServiceNotFound::new)
+                    .truncateFile(file, size);
+            logger.info("File truncated");
+        } catch (Exception e) {
+            throw new TruncateFileException(e);
+        }
     }
 
     @Override
@@ -189,7 +224,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
             int resultBytes = aggregatorService.downloadFile(
                     cloudStorageServices.stream()
                             .findAny()
-                            .orElseThrow(() -> new DownloadFileException(new CloudStorageServiceNotFound())),
+                            .orElseThrow(CloudStorageServiceNotFound::new),
                     file,
                     bytesRead,
                     offset,
