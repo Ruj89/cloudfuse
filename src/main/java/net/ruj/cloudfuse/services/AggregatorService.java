@@ -43,7 +43,13 @@ public class AggregatorService {
             throw new WrongQueueItemResultTypeException();
     }
 
-    public int downloadFile(CloudStorageService cloudStorageService, CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws Exception {
+    public int downloadFile(
+            CloudStorageService cloudStorageService,
+            CloudFile file,
+            byte[] bytesRead,
+            long offset,
+            int bytesToRead
+    ) throws Exception {
         CompletableFuture<? extends QueueItemResult> futureTask = queueService.enqueueFile(
                 new DownloadQueueItem(
                         cloudStorageService,
