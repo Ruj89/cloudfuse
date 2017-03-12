@@ -9,7 +9,7 @@ import java.io.StringWriter;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class StreamsTest {
+public class PatchedInputStreamTestUnit {
     @Test
     public void patchedInputStreamTestEnd() throws Exception {
         byte[] replacement = "alternative world!".getBytes();

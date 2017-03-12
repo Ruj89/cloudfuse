@@ -10,9 +10,9 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
+
+import static net.ruj.cloudfuse.fuse.filesystem.test.CloudFileUtils.generateFakeFile;
 
 public class CacheServiceTestUnit {
     private static final String HELLO_WORLD = "Hello world!";
@@ -66,10 +66,5 @@ public class CacheServiceTestUnit {
         cacheService.downloadCachedItem(file2, bytesRead2, 0, FOO_BAR.length());
         Assertions.assertThat(new String(bytesRead1)).isEqualTo(HELLO_WORLD);
         Assertions.assertThat(new String(bytesRead2)).isEqualTo(FOO_BAR);
-    }
-
-    private CloudFile generateFakeFile(String name) {
-        Path path = Paths.get(name);
-        return new CloudFile(path, name, null);
     }
 }
