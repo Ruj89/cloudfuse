@@ -59,7 +59,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void init(Path mountPoint, CloudFS cloudFS) throws MakeRootException {
+    public void init(Path mountPoint, CloudFS cloudFS) {
         logger.info("Mounting Google Drive fuse partition on '" + mountPoint.toString() + "'...");
         cloudFS.mount(mountPoint, false);
         logger.info("Google Drive mounted!");

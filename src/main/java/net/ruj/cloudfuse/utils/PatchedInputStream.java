@@ -22,7 +22,7 @@ public class PatchedInputStream extends InputStream {
     }
 
     @Override
-    public int read() throws IOException {
+    public int read() {
         int returningByte = -1;
         try {
             if (position < offset || position >= offset + length)

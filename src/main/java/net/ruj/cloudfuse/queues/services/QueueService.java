@@ -41,7 +41,7 @@ public class QueueService {
                 .filter(i -> i.getItem().getState().equals(QueueItemState.ENQUEUED))
                 .filter(i -> canAppendItem(i, finalItem))
                 .findAny()
-                .orElseGet(() -> null);
+                .orElse(null);
         if (appendingSupplier != null) {
             UploadQueueItem appendingSupplierItem = appendingSupplier.getItem();
             appendingSupplierItem.setBytesToWrite(ArrayUtils.addAll(
