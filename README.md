@@ -51,7 +51,8 @@ Using CLI create the mounting point folder and execute the success jar:
 mkdir /tmp/mnt
 java -jar cloudfuse.jar
 ```
-Using a local web client visit http://localhost:8080/mount and authorize the Google App.
+Using a local web client visit http://localhost:8080/gdrive/connect and authorize the Google App,
+then http://localhost:8080/mount to mount the folder.
 
 ## Links
 1. <a name="link-gdrive"></a>https://www.google.com/drive
