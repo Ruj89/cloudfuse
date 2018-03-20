@@ -22,6 +22,7 @@ public class TokenService {
         tokenRepository.save(token);
     }
 
+    //TODO: Handling token expiration
     public String getTokenString() throws EntityNotFoundException {
         return getLastToken()
                 .map(Token::getToken)
