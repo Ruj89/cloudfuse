@@ -48,7 +48,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     public void init() throws MakeRootException, IllegalAccessException {
-        if (alreadyInitialized)
+        if (alreadyInitialized || cloudStorageServices.size() > 0)
             return;
         alreadyInitialized = true;
         initLibFuse();
