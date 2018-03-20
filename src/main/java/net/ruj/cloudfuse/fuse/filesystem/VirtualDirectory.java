@@ -17,15 +17,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class CloudDirectory extends CloudPath {
+public class VirtualDirectory extends CloudPath {
     private List<CloudPath> contents = new ArrayList<>();
     private Set<DirectoryEventHandler> directoryEventHandlers = new HashSet<>();
 
-    CloudDirectory(Path path, String name) {
+    VirtualDirectory(Path path, String name) {
         super(path, name);
     }
 
-    private CloudDirectory(Path path, String name, CloudDirectory parent) {
+    private VirtualDirectory(Path path, String name, VirtualDirectory parent) {
         super(path, name, parent);
     }
 
@@ -76,7 +76,7 @@ public class CloudDirectory extends CloudPath {
     }
 
     public synchronized void mkdir(String lastComponent, CloudPathInfo cloudPathInfo) {
-        CloudDirectory directory = new CloudDirectory(Paths.get(path.toString(), lastComponent), lastComponent, this);
+        VirtualDirectory directory = new VirtualDirectory(Paths.get(path.toString(), lastComponent), lastComponent, this);
         contents.add(directory);
         this.directoryEventHandlers.forEach(directory::addEventHandler);
         if (cloudPathInfo == null)
@@ -134,7 +134,7 @@ public class CloudDirectory extends CloudPath {
         });
     }
 
-    public CloudDirectory addEventHandler(DirectoryEventHandler eventHandler) {
+    public VirtualDirectory addEventHandler(DirectoryEventHandler eventHandler) {
         directoryEventHandlers.add(eventHandler);
         return this;
     }

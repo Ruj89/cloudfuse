@@ -15,10 +15,10 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 import java.nio.file.Paths;
 
 public class CloudFS extends FuseStubFS {
-    private CloudDirectory rootDirectory;
+    private VirtualDirectory rootDirectory;
 
     public CloudFS(CloudFileSystemService cloudFileSystemService) throws MakeRootException {
-        rootDirectory = new CloudDirectory(Paths.get("/"), "");
+        rootDirectory = new VirtualDirectory(Paths.get("/"), "");
         rootDirectory.addEventHandler(cloudFileSystemService);
         cloudFileSystemService.onRootMounted(rootDirectory);
     }
@@ -29,8 +29,8 @@ public class CloudFS extends FuseStubFS {
             return -ErrorCodes.EEXIST();
         }
         CloudPath parent = getParentPath(path);
-        if (parent instanceof CloudDirectory) {
-            ((CloudDirectory) parent).mkfile(getLastComponent(path));
+        if (parent instanceof VirtualDirectory) {
+            ((VirtualDirectory) parent).mkfile(getLastComponent(path));
             return 0;
         }
         return -ErrorCodes.ENOENT();
@@ -73,8 +73,8 @@ public class CloudFS extends FuseStubFS {
             return -ErrorCodes.EEXIST();
         }
         CloudPath parent = getParentPath(path);
-        if (parent instanceof CloudDirectory) {
-            ((CloudDirectory) parent).mkdir(getLastComponent(path));
+        if (parent instanceof VirtualDirectory) {
+            ((VirtualDirectory) parent).mkdir(getLastComponent(path));
             return 0;
         }
         return -ErrorCodes.ENOENT();
@@ -98,12 +98,12 @@ public class CloudFS extends FuseStubFS {
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof CloudDirectory)) {
+        if (!(p instanceof VirtualDirectory)) {
             return -ErrorCodes.ENOTDIR();
         }
         filter.apply(buf, ".", null, 0);
         filter.apply(buf, "..", null, 0);
-        ((CloudDirectory) p).read(buf, filter);
+        ((VirtualDirectory) p).read(buf, filter);
         return 0;
     }
 
@@ -117,12 +117,12 @@ public class CloudFS extends FuseStubFS {
         if (newParent == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(newParent instanceof CloudDirectory)) {
+        if (!(newParent instanceof VirtualDirectory)) {
             return -ErrorCodes.ENOTDIR();
         }
         p.delete();
         p.rename(newName.substring(newName.lastIndexOf("/")));
-        ((CloudDirectory) newParent).add(p);
+        ((VirtualDirectory) newParent).add(p);
         return 0;
     }
 
@@ -132,7 +132,7 @@ public class CloudFS extends FuseStubFS {
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof CloudDirectory)) {
+        if (!(p instanceof VirtualDirectory)) {
             return -ErrorCodes.ENOTDIR();
         }
         p.delete();

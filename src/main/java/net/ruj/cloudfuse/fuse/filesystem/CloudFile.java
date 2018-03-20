@@ -12,7 +12,7 @@ import java.util.Set;
 public class CloudFile extends CloudPath {
     private Set<FileEventHandler> fileEventHandlers = new HashSet<>();
 
-    public CloudFile(Path path, String name, CloudDirectory parent) {
+    public CloudFile(Path path, String name, VirtualDirectory parent) {
         super(path, name, parent);
     }
 

@@ -8,7 +8,7 @@ import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import net.ruj.cloudfuse.fuse.exceptions.CloudStorageServiceNotFound;
-import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 import net.ruj.cloudfuse.services.AggregatorService;
@@ -85,7 +85,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void onDirectoryAdded(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
+    public void onDirectoryAdded(VirtualDirectory parent, VirtualDirectory directory) throws MakeDirectoryException {
         Optional<MakeDirectoryException> eO = cloudStorageServices.stream()
                 .map(css -> {
                     try {
@@ -102,7 +102,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void onDirectoryRemoved(CloudDirectory directory) throws RemoveDirectoryException {
+    public void onDirectoryRemoved(VirtualDirectory directory) throws RemoveDirectoryException {
         try {
             cloudStorageServices.stream()
                     .findAny()
@@ -115,7 +115,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void onDirectorySynchronized(CloudDirectory directory, CloudPathInfo cloudPathInfo) {
+    public void onDirectorySynchronized(VirtualDirectory directory, CloudPathInfo cloudPathInfo) {
         logger.info("Directory synchronized");
         directory.addEventHandler(this);
         directory.setCloudPathInfo(cloudPathInfo);
@@ -123,7 +123,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void onFileAdded(CloudDirectory parent, CloudFile file) throws CreateFileException {
+    public void onFileAdded(VirtualDirectory parent, CloudFile file) throws CreateFileException {
         try {
             cloudStorageServices.stream()
                     .findAny()
@@ -173,7 +173,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         }
     }
 
-    public void onRootMounted(CloudDirectory root) throws MakeRootException {
+    public void onRootMounted(VirtualDirectory root) throws MakeRootException {
         try {
             cloudStorageServices.stream()
                     .findAny()
@@ -185,7 +185,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildrenException {
+    public void synchronizeChildrenPaths(VirtualDirectory directory) throws SynchronizeChildrenException {
         try {
             cloudStorageServices.stream()
                     .findAny()

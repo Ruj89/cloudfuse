@@ -9,7 +9,7 @@ import java.nio.file.Path;
 
 public abstract class CloudPath {
     String name;
-    CloudDirectory parent;
+    VirtualDirectory parent;
     Path path;
     CloudPathInfo cloudPathInfo;
 
@@ -17,7 +17,7 @@ public abstract class CloudPath {
         this(path, name, null);
     }
 
-    CloudPath(Path path, String name, CloudDirectory parent) {
+    CloudPath(Path path, String name, VirtualDirectory parent) {
         this.path = path;
         this.name = name;
         this.parent = parent;

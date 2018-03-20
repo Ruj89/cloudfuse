@@ -8,7 +8,7 @@ import net.ruj.cloudfuse.clouds.gdrive.models.FileList;
 import net.ruj.cloudfuse.database.services.TokenService;
 import net.ruj.cloudfuse.fuse.FuseConfiguration;
 import net.ruj.cloudfuse.fuse.exceptions.CloudPathInfoNotFound;
-import net.ruj.cloudfuse.fuse.filesystem.CloudDirectory;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
 import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
 import net.ruj.cloudfuse.net.PipeHttpEntity;
@@ -66,7 +66,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void createFile(CloudDirectory parent, CloudFile file) throws CreateFileException {
+    public void createFile(VirtualDirectory parent, CloudFile file) throws CreateFileException {
         logger.info("Creating file '" + file.getPath() + "'...");
         try {
             String parentId = parent.extractPathId();
@@ -215,7 +215,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void makeDirectory(CloudDirectory parent, CloudDirectory directory) throws MakeDirectoryException {
+    public void makeDirectory(VirtualDirectory parent, VirtualDirectory directory) throws MakeDirectoryException {
         logger.info("Making folder '" + directory.getPath() + "'...");
         try {
             String parentId = parent.extractPathId();
@@ -229,7 +229,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void removeDirectory(CloudDirectory directory) throws RemoveDirectoryException {
+    public void removeDirectory(VirtualDirectory directory) throws RemoveDirectoryException {
         logger.info("Removing directory '" + directory.getPath() + "'");
         try {
             String id = directory.extractPathId();
@@ -248,7 +248,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void makeRoot(CloudDirectory root, FuseConfiguration fuseConfiguration) throws MakeRootException {
+    public void makeRoot(VirtualDirectory root, FuseConfiguration fuseConfiguration) throws MakeRootException {
         logger.info("Mounting root directory...");
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.put("q", Collections.singletonList(
@@ -283,7 +283,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void synchronizeChildrenPaths(CloudDirectory directory) throws SynchronizeChildrenException {
+    public void synchronizeChildrenPaths(VirtualDirectory directory) throws SynchronizeChildrenException {
         logger.info("Synchronizing directory...");
 
         try {
@@ -357,11 +357,11 @@ public class GDriveService implements CloudStorageService {
         }
     }
 
-    private void synchronizeChildFile(CloudDirectory parentDirectory, File file) {
+    private void synchronizeChildFile(VirtualDirectory parentDirectory, File file) {
         parentDirectory.mkfile(file.getName(), new GDriveCloudPathInfo(file));
     }
 
-    private void synchronizeChildDirectory(CloudDirectory parentDirectory, File file) {
+    private void synchronizeChildDirectory(VirtualDirectory parentDirectory, File file) {
         parentDirectory.mkdir(file.getName(), new GDriveCloudPathInfo(file));
     }
 
