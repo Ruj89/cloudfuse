@@ -16,7 +16,7 @@ public class CloudStoragesSetupController {
     }
 
     @GetMapping("/mount")
-    public void mount() throws IllegalAccessException, MakeRootException {
+    public void mount() throws IllegalAccessException {
         virtualFileSystemService.init();
     }
 }

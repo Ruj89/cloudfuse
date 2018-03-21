@@ -17,7 +17,7 @@ public class GDriveConnectorController extends CloudStorageConnectorAbstractCont
     public GDriveConnectorController(
             VirtualFileSystemService virtualFileSystemService,
             OAuth2RestTemplate oAuth2RestTemplate,
-            TokenService tokenService) throws MakeRootException, IllegalAccessException {
+            TokenService tokenService) throws IllegalAccessException {
         super(virtualFileSystemService, oAuth2RestTemplate, tokenService);
         virtualFileSystemService.addCloudStorageService(new GDriveService(tokenService));
     }

@@ -238,10 +238,9 @@ public class VirtualFileSystemService implements DirectoryEventHandler, FileEven
     }
 
     public void addCloudStorageService(CloudStorageService service)
-            throws MakeRootException, IllegalAccessException {
+            throws IllegalAccessException {
         this.cloudStorageServices.add(service);
-        if (fuseConfiguration.isAutomount()) {
+        if (fuseConfiguration.isAutomount())
             init();
-        }
     }
 }
