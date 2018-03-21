@@ -7,6 +7,7 @@ import net.ruj.cloudfuse.clouds.exceptions.MakeDirectoryException;
 import net.ruj.cloudfuse.clouds.exceptions.RemoveDirectoryException;
 import net.ruj.cloudfuse.clouds.exceptions.SynchronizeChildrenException;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
+import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
 
@@ -20,6 +21,7 @@ import java.util.Set;
 public class VirtualDirectory extends VirtualPath {
     private List<VirtualPath> contents = new ArrayList<>();
     private Set<DirectoryEventHandler> directoryEventHandlers = new HashSet<>();
+    private Set<FileEventHandler> childrenFilesEventHandlers = new HashSet<>();
 
     VirtualDirectory(Path path, String name) {
         super(path, name);
@@ -75,10 +77,11 @@ public class VirtualDirectory extends VirtualPath {
         mkdir(lastComponent, null);
     }
 
-    public synchronized void mkdir(String lastComponent, VirtualPathInfo virtualPathInfo) {
-        VirtualDirectory directory = new VirtualDirectory(Paths.get(path.toString(), lastComponent), lastComponent, this);
+    public synchronized void mkdir(String folderName, VirtualPathInfo virtualPathInfo) {
+        VirtualDirectory directory = new VirtualDirectory(Paths.get(path.toString(), folderName), folderName, this);
         contents.add(directory);
         this.directoryEventHandlers.forEach(directory::addEventHandler);
+        this.childrenFilesEventHandlers.forEach(directory::addChildrenFileEventHandler);
         if (virtualPathInfo == null)
             directoryEventHandlers.forEach(deh -> {
                 try {
@@ -97,6 +100,7 @@ public class VirtualDirectory extends VirtualPath {
     public synchronized void mkfile(String lastComponent, VirtualPathInfo virtualPathInfo) {
         VirtualFile file = new VirtualFile(Paths.get(path.toString(), lastComponent), lastComponent, this);
         contents.add(file);
+        this.childrenFilesEventHandlers.forEach(file::addEventHandler);
         if (virtualPathInfo == null)
             directoryEventHandlers.forEach(deh -> {
                 try {
@@ -136,6 +140,11 @@ public class VirtualDirectory extends VirtualPath {
 
     public VirtualDirectory addEventHandler(DirectoryEventHandler eventHandler) {
         directoryEventHandlers.add(eventHandler);
+        return this;
+    }
+
+    public VirtualDirectory addChildrenFileEventHandler(FileEventHandler eventHandler){
+        childrenFilesEventHandlers.add(eventHandler);
         return this;
     }
 }

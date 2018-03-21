@@ -117,7 +117,6 @@ public class VirtualFileSystemService implements DirectoryEventHandler, FileEven
     @Override
     public void onDirectorySynchronized(VirtualDirectory directory, VirtualPathInfo virtualPathInfo) {
         logger.info("Directory synchronized");
-        directory.addEventHandler(this);
         directory.setVirtualPathInfo(virtualPathInfo);
         directory.synchronizeChildrenPaths();
     }
@@ -130,7 +129,6 @@ public class VirtualFileSystemService implements DirectoryEventHandler, FileEven
                     .orElseThrow(CloudStorageServiceNotFound::new)
                     .createFile(parent, file);
             logger.info("File added in parent");
-            file.addEventHandler(this);
         } catch (Exception e) {
             throw new CreateFileException(e);
         }
@@ -139,7 +137,6 @@ public class VirtualFileSystemService implements DirectoryEventHandler, FileEven
     @Override
     public void onFileSynchronized(VirtualFile file, VirtualPathInfo virtualPathInfo) {
         logger.info("File synchronized");
-        file.addEventHandler(this);
         file.setVirtualPathInfo(virtualPathInfo);
     }
 
