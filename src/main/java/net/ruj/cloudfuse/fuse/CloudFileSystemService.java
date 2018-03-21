@@ -173,7 +173,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         }
     }
 
-    public void onRootMounted(VirtualDirectory root) throws MakeRootException {
+    public void onRootDirectoryInit(VirtualDirectory root) throws MakeRootException {
         try {
             cloudStorageServices.stream()
                     .findAny()

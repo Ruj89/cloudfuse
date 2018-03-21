@@ -20,7 +20,7 @@ public class CloudFS extends FuseStubFS {
     public CloudFS(CloudFileSystemService cloudFileSystemService) throws MakeRootException {
         rootDirectory = new VirtualDirectory(Paths.get("/"), "");
         rootDirectory.addEventHandler(cloudFileSystemService);
-        cloudFileSystemService.onRootMounted(rootDirectory);
+        cloudFileSystemService.onRootDirectoryInit(rootDirectory);
     }
 
     @Override
