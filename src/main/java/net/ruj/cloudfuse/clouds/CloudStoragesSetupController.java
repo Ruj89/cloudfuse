@@ -1,6 +1,5 @@
 package net.ruj.cloudfuse.clouds;
 
-import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
 import net.ruj.cloudfuse.fuse.VirtualFileSystemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

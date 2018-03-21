@@ -7,9 +7,9 @@ import net.ruj.cloudfuse.fuse.VirtualFileSystemService;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 
 public abstract class CloudStorageConnectorAbstractController {
-    private final VirtualFileSystemService virtualFileSystemService;
+    protected final VirtualFileSystemService virtualFileSystemService;
+    protected final TokenService tokenService;
     private final OAuth2RestTemplate oAuth2RestTemplate;
-    private final TokenService tokenService;
 
     public CloudStorageConnectorAbstractController(
             VirtualFileSystemService virtualFileSystemService,
