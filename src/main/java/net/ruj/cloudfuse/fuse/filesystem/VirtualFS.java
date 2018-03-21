@@ -20,6 +20,7 @@ public class VirtualFS extends FuseStubFS {
     public VirtualFS(VirtualFileSystemService virtualFileSystemService) throws MakeRootException {
         rootDirectory = new VirtualDirectory(Paths.get("/"), "");
         rootDirectory.addEventHandler(virtualFileSystemService);
+        rootDirectory.addChildrenFileEventHandler(virtualFileSystemService);
         virtualFileSystemService.onRootDirectoryInit(rootDirectory);
     }
 
