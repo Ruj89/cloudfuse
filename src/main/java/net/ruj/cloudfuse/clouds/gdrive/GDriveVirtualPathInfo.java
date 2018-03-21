@@ -1,12 +1,12 @@
 package net.ruj.cloudfuse.clouds.gdrive;
 
-import net.ruj.cloudfuse.clouds.CloudPathInfo;
+import net.ruj.cloudfuse.clouds.VirtualPathInfo;
 import net.ruj.cloudfuse.clouds.gdrive.models.File;
 
-public class GDriveCloudPathInfo implements CloudPathInfo {
+public class GDriveVirtualPathInfo implements VirtualPathInfo {
     private File linkedFileInfo;
 
-    public GDriveCloudPathInfo(File linkedFileInfo) {
+    public GDriveVirtualPathInfo(File linkedFileInfo) {
         this.linkedFileInfo = linkedFileInfo;
     }
 

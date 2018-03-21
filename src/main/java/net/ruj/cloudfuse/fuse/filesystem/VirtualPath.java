@@ -1,23 +1,23 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
-import net.ruj.cloudfuse.clouds.CloudPathInfo;
-import net.ruj.cloudfuse.clouds.gdrive.GDriveCloudPathInfo;
+import net.ruj.cloudfuse.clouds.VirtualPathInfo;
+import net.ruj.cloudfuse.clouds.gdrive.GDriveVirtualPathInfo;
 import net.ruj.cloudfuse.fuse.exceptions.CloudPathInfoNotFound;
 import ru.serce.jnrfuse.struct.FileStat;
 
 import java.nio.file.Path;
 
-public abstract class CloudPath {
+public abstract class VirtualPath {
     String name;
     VirtualDirectory parent;
     Path path;
-    CloudPathInfo cloudPathInfo;
+    VirtualPathInfo virtualPathInfo;
 
-    CloudPath(Path path, String name) {
+    VirtualPath(Path path, String name) {
         this(path, name, null);
     }
 
-    CloudPath(Path path, String name, VirtualDirectory parent) {
+    VirtualPath(Path path, String name, VirtualDirectory parent) {
         this.path = path;
         this.name = name;
         this.parent = parent;
@@ -33,7 +33,7 @@ public abstract class CloudPath {
 
     abstract void remove();
 
-    protected CloudPath find(String path) {
+    protected VirtualPath find(String path) {
         while (path.startsWith("/")) {
             path = path.substring(1);
         }
@@ -60,17 +60,17 @@ public abstract class CloudPath {
         this.path = path;
     }
 
-    public CloudPathInfo getCloudPathInfo() {
-        return cloudPathInfo;
+    public VirtualPathInfo getVirtualPathInfo() {
+        return virtualPathInfo;
     }
 
-    public void setCloudPathInfo(CloudPathInfo cloudPathInfo) {
-        this.cloudPathInfo = cloudPathInfo;
+    public void setVirtualPathInfo(VirtualPathInfo virtualPathInfo) {
+        this.virtualPathInfo = virtualPathInfo;
     }
 
     public String extractPathId() throws CloudPathInfoNotFound {
-        if (cloudPathInfo instanceof GDriveCloudPathInfo)
-            return ((GDriveCloudPathInfo) getCloudPathInfo()).getLinkedFileInfo().getId();
+        if (virtualPathInfo instanceof GDriveVirtualPathInfo)
+            return ((GDriveVirtualPathInfo) getVirtualPathInfo()).getLinkedFileInfo().getId();
         throw new CloudPathInfoNotFound();
     }
 }

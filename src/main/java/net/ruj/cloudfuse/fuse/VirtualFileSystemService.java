@@ -2,15 +2,15 @@ package net.ruj.cloudfuse.fuse;
 
 import jnr.ffi.provider.ClosureManager;
 import jnr.ffi.provider.jffi.NativeRuntime;
-import net.ruj.cloudfuse.clouds.CloudPathInfo;
 import net.ruj.cloudfuse.clouds.CloudStorageService;
+import net.ruj.cloudfuse.clouds.VirtualPathInfo;
 import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.eventhandlers.DirectoryEventHandler;
 import net.ruj.cloudfuse.fuse.eventhandlers.FileEventHandler;
 import net.ruj.cloudfuse.fuse.exceptions.CloudStorageServiceNotFound;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualDirectory;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFS;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
 import net.ruj.cloudfuse.services.AggregatorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,19 +27,19 @@ import java.util.Optional;
 import static org.springframework.util.ReflectionUtils.findField;
 
 @Service
-public class CloudFileSystemService implements DirectoryEventHandler, FileEventHandler {
-    private static final Logger logger = LoggerFactory.getLogger(CloudFileSystemService.class);
+public class VirtualFileSystemService implements DirectoryEventHandler, FileEventHandler {
+    private static final Logger logger = LoggerFactory.getLogger(VirtualFileSystemService.class);
 
     private final FuseConfiguration fuseConfiguration;
     private final AggregatorService aggregatorService;
 
-    private CloudFS cloudFS;
+    private VirtualFS virtualFS;
     //TODO: handle multiple cloud storages
     private ArrayList<CloudStorageService> cloudStorageServices = new ArrayList<>();
     private boolean alreadyInitialized = false;
 
     @Autowired
-    public CloudFileSystemService(
+    public VirtualFileSystemService(
             FuseConfiguration fuseConfiguration,
             AggregatorService aggregatorService
     ) {
@@ -47,7 +47,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
         this.aggregatorService = aggregatorService;
     }
 
-    public void init() throws MakeRootException, IllegalAccessException {
+    public void init() throws IllegalAccessException {
         if (alreadyInitialized || cloudStorageServices.size() == 0)
             return;
         alreadyInitialized = true;
@@ -56,10 +56,10 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
                 .filter(CloudStorageService::isReady)
                 .forEach(cloudStorageService -> {
                     try {
-                        cloudFS = new CloudFS(this);
+                        virtualFS = new VirtualFS(this);
                         cloudStorageService.init(
                                 Paths.get(fuseConfiguration.getDrive().getLocalFolder()),
-                                cloudFS
+                                virtualFS
                         );
                     } catch (MakeRootException e) {
                         e.printStackTrace();
@@ -81,7 +81,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     @SuppressWarnings("unused")
     @PreDestroy
     private void destroy() {
-        cloudFS.umount();
+        virtualFS.umount();
     }
 
     @Override
@@ -115,15 +115,15 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void onDirectorySynchronized(VirtualDirectory directory, CloudPathInfo cloudPathInfo) {
+    public void onDirectorySynchronized(VirtualDirectory directory, VirtualPathInfo virtualPathInfo) {
         logger.info("Directory synchronized");
         directory.addEventHandler(this);
-        directory.setCloudPathInfo(cloudPathInfo);
+        directory.setVirtualPathInfo(virtualPathInfo);
         directory.synchronizeChildrenPaths();
     }
 
     @Override
-    public void onFileAdded(VirtualDirectory parent, CloudFile file) throws CreateFileException {
+    public void onFileAdded(VirtualDirectory parent, VirtualFile file) throws CreateFileException {
         try {
             cloudStorageServices.stream()
                     .findAny()
@@ -137,14 +137,14 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void onFileSynchronized(CloudFile file, CloudPathInfo cloudPathInfo) {
+    public void onFileSynchronized(VirtualFile file, VirtualPathInfo virtualPathInfo) {
         logger.info("File synchronized");
         file.addEventHandler(this);
-        file.setCloudPathInfo(cloudPathInfo);
+        file.setVirtualPathInfo(virtualPathInfo);
     }
 
     @Override
-    public void onFileChanged(CloudFile file, long writeOffset, byte[] bytesToWrite) throws UploadFileException {
+    public void onFileChanged(VirtualFile file, long writeOffset, byte[] bytesToWrite) throws UploadFileException {
         try {
             aggregatorService.changeFile(
                     cloudStorageServices.stream()
@@ -161,7 +161,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public void onFileRemoved(CloudFile file) throws RemoveFileException {
+    public void onFileRemoved(VirtualFile file) throws RemoveFileException {
         try {
             cloudStorageServices.stream()
                     .findAny()
@@ -197,16 +197,16 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public long fileSize(CloudFile file) throws FileSizeRequestException {
+    public long fileSize(VirtualFile file) throws FileSizeRequestException {
         try {
-            return file.getCloudPathInfo().getFileSize();
+            return file.getVirtualPathInfo().getFileSize();
         } catch (Exception e) {
             throw new FileSizeRequestException(e);
         }
     }
 
     @Override
-    public void onFileTruncated(CloudFile file, long size) throws TruncateFileException {
+    public void onFileTruncated(VirtualFile file, long size) throws TruncateFileException {
         try {
             cloudStorageServices.stream()
                     .findAny()
@@ -219,7 +219,7 @@ public class CloudFileSystemService implements DirectoryEventHandler, FileEventH
     }
 
     @Override
-    public int onFileRead(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException {
+    public int onFileRead(VirtualFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException {
         try {
             int resultBytes = aggregatorService.downloadFile(
                     cloudStorageServices.stream()

@@ -3,7 +3,7 @@ package net.ruj.cloudfuse.services;
 import net.ruj.cloudfuse.cache.exceptions.FileNotCachedException;
 import net.ruj.cloudfuse.cache.services.CacheService;
 import net.ruj.cloudfuse.clouds.CloudStorageService;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
 import net.ruj.cloudfuse.queues.items.DownloadQueueItem;
 import net.ruj.cloudfuse.queues.items.DownloadQueueItemResult;
 import net.ruj.cloudfuse.queues.items.QueueItemResult;
@@ -25,7 +25,7 @@ public class AggregatorService {
 
     public void changeFile(
             CloudStorageService cloudStorageService,
-            CloudFile file,
+            VirtualFile file,
             long writeOffset,
             byte[] bytesToWrite
     ) throws Exception {
@@ -42,7 +42,7 @@ public class AggregatorService {
 
     public int downloadFile(
             CloudStorageService cloudStorageService,
-            CloudFile file,
+            VirtualFile file,
             byte[] bytesRead,
             long offset,
             int bytesToRead

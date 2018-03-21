@@ -3,19 +3,19 @@ package net.ruj.cloudfuse.clouds;
 import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
 import net.ruj.cloudfuse.database.models.Token;
 import net.ruj.cloudfuse.database.services.TokenService;
-import net.ruj.cloudfuse.fuse.CloudFileSystemService;
+import net.ruj.cloudfuse.fuse.VirtualFileSystemService;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 
 public abstract class CloudStorageConnectorAbstractController {
-    private final CloudFileSystemService cloudFileSystemService;
+    private final VirtualFileSystemService virtualFileSystemService;
     private final OAuth2RestTemplate oAuth2RestTemplate;
     private final TokenService tokenService;
 
     public CloudStorageConnectorAbstractController(
-            CloudFileSystemService cloudFileSystemService,
+            VirtualFileSystemService virtualFileSystemService,
             OAuth2RestTemplate oAuth2RestTemplate,
             TokenService tokenService) {
-        this.cloudFileSystemService = cloudFileSystemService;
+        this.virtualFileSystemService = virtualFileSystemService;
         this.oAuth2RestTemplate = oAuth2RestTemplate;
         this.tokenService = tokenService;
     }

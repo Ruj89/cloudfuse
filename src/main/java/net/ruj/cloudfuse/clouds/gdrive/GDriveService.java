@@ -9,8 +9,8 @@ import net.ruj.cloudfuse.database.services.TokenService;
 import net.ruj.cloudfuse.fuse.FuseConfiguration;
 import net.ruj.cloudfuse.fuse.exceptions.CloudPathInfoNotFound;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualDirectory;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFS;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
 import net.ruj.cloudfuse.net.PipeHttpEntity;
 import net.ruj.cloudfuse.utils.PatchedInputStream;
 import org.apache.commons.io.input.BoundedInputStream;
@@ -59,14 +59,14 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void init(Path mountPoint, CloudFS cloudFS) {
+    public void init(Path mountPoint, VirtualFS virtualFS) {
         logger.info("Mounting Google Drive fuse partition on '" + mountPoint.toString() + "'...");
-        cloudFS.mount(mountPoint, false);
+        virtualFS.mount(mountPoint, false);
         logger.info("Google Drive mounted!");
     }
 
     @Override
-    public void createFile(VirtualDirectory parent, CloudFile file) throws CreateFileException {
+    public void createFile(VirtualDirectory parent, VirtualFile file) throws CreateFileException {
         logger.info("Creating file '" + file.getPath() + "'...");
         try {
             String parentId = parent.extractPathId();
@@ -82,14 +82,14 @@ public class GDriveService implements CloudStorageService {
                     ),
                     File.class
             );
-            file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
+            file.setVirtualPathInfo(new GDriveVirtualPathInfo(remoteFile));
         } catch (URISyntaxException | CloudPathInfoNotFound e) {
             throw new CreateFileException(e);
         }
     }
 
     @Override
-    public synchronized void uploadFile(CloudFile file, byte[] bytesRead, long writeOffset, byte[] bytesToWrite)
+    public synchronized void uploadFile(VirtualFile file, byte[] bytesRead, long writeOffset, byte[] bytesToWrite)
             throws UploadFileException {
         logger.info("Downloading file '" + file.getPath() + "' content...");
         try {
@@ -122,7 +122,7 @@ public class GDriveService implements CloudStorageService {
                                 .getContent()
                 ) {
                     File remoteFile = mapper.readValue(inputStream, File.class);
-                    file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
+                    file.setVirtualPathInfo(new GDriveVirtualPathInfo(remoteFile));
                     logger.info("Upload of file '" + remoteFile.getName() + "' completed.");
                 }
             }
@@ -133,7 +133,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public int downloadFile(CloudFile file, byte[] bytesRead, long offset, int bytesToRead)
+    public int downloadFile(VirtualFile file, byte[] bytesRead, long offset, int bytesToRead)
             throws DownloadFileException {
         logger.info("Downloading file '" + file.getPath() + "' content...");
         try {
@@ -158,7 +158,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void truncateFile(CloudFile file, long size) throws TruncateFileException {
+    public void truncateFile(VirtualFile file, long size) throws TruncateFileException {
         logger.info("Downloading file '" + file.getPath() + "' content...");
         try {
             String id = file.extractPathId();
@@ -185,7 +185,7 @@ public class GDriveService implements CloudStorageService {
                 uploaderRequest.setEntity(new PipeHttpEntity(is, size));
                 try (InputStream inputStream = uploaderClient.execute(uploaderRequest).getEntity().getContent()) {
                     File remoteFile = mapper.readValue(inputStream, File.class);
-                    file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
+                    file.setVirtualPathInfo(new GDriveVirtualPathInfo(remoteFile));
                     logger.info("Upload of file '" + remoteFile.getName() + "' completed.");
                 }
             }
@@ -196,7 +196,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void removeFile(CloudFile file) throws RemoveFileException {
+    public void removeFile(VirtualFile file) throws RemoveFileException {
         logger.info("Removing file '" + file.getPath() + "'");
         try {
             String id = file.extractPathId();
@@ -220,7 +220,7 @@ public class GDriveService implements CloudStorageService {
         try {
             String parentId = parent.extractPathId();
             File remoteFolder = gDriveCreateDirectory(directory.getPath().getFileName().toString(), parentId);
-            directory.setCloudPathInfo(new GDriveCloudPathInfo(remoteFolder));
+            directory.setVirtualPathInfo(new GDriveVirtualPathInfo(remoteFolder));
             logger.info("Folder '" + remoteFolder.getName() + "' created successfully.");
         } catch (URISyntaxException | CloudPathInfoNotFound e) {
             e.printStackTrace();
@@ -273,7 +273,7 @@ public class GDriveService implements CloudStorageService {
                     .stream()
                     .findAny()
                     .orElseGet(() -> gDriveCreateDirectory(fuseConfiguration.getDrive().getRemoteFolder()));
-            root.setCloudPathInfo(new GDriveCloudPathInfo(remoteFolder));
+            root.setVirtualPathInfo(new GDriveVirtualPathInfo(remoteFolder));
             //TODO: Transactional synchronization
             root.synchronizeChildrenPaths();
         } catch (URISyntaxException e) {
@@ -315,7 +315,7 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void synchronizeFileSize(CloudFile file) throws FileSizeRequestException {
+    public void synchronizeFileSize(VirtualFile file) throws FileSizeRequestException {
         synchronizeFileInfo(file);
     }
 
@@ -339,7 +339,7 @@ public class GDriveService implements CloudStorageService {
         );
     }
 
-    private void synchronizeFileInfo(CloudFile file) throws FileSizeRequestException {
+    private void synchronizeFileInfo(VirtualFile file) throws FileSizeRequestException {
         try {
             String id = file.extractPathId();
             File remoteFile = restTemplate.exchange(
@@ -351,18 +351,18 @@ public class GDriveService implements CloudStorageService {
                     generateGetRequestEntity(),
                     File.class
             ).getBody();
-            file.setCloudPathInfo(new GDriveCloudPathInfo(remoteFile));
+            file.setVirtualPathInfo(new GDriveVirtualPathInfo(remoteFile));
         } catch (URISyntaxException | CloudPathInfoNotFound e) {
             throw new FileSizeRequestException(e);
         }
     }
 
     private void synchronizeChildFile(VirtualDirectory parentDirectory, File file) {
-        parentDirectory.mkfile(file.getName(), new GDriveCloudPathInfo(file));
+        parentDirectory.mkfile(file.getName(), new GDriveVirtualPathInfo(file));
     }
 
     private void synchronizeChildDirectory(VirtualDirectory parentDirectory, File file) {
-        parentDirectory.mkdir(file.getName(), new GDriveCloudPathInfo(file));
+        parentDirectory.mkdir(file.getName(), new GDriveVirtualPathInfo(file));
     }
 
     private File gDriveCreateDirectory(String directoryName) {

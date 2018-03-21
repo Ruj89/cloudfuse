@@ -4,7 +4,7 @@ import net.ruj.cloudfuse.cache.exceptions.BiasedStartingOffsetItemException;
 import net.ruj.cloudfuse.cache.exceptions.FileNotCachedException;
 import net.ruj.cloudfuse.cache.items.CacheItem;
 import net.ruj.cloudfuse.clouds.exceptions.DownloadFileException;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
 import net.ruj.cloudfuse.utils.PatchedInputStream;
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import java.util.Optional;
 public class CacheService {
     private ArrayList<CacheItem> items = new ArrayList<>();
 
-    public void storeItemChanges(CloudFile file, byte[] bytes, long offset)
+    public void storeItemChanges(VirtualFile file, byte[] bytes, long offset)
             throws IOException, BiasedStartingOffsetItemException {
         CacheItem item = new CacheItem(file, bytes, offset);
         Optional<CacheItem> replacingItemO = itemThatShouldBeReplaced(item);
@@ -56,18 +56,18 @@ public class CacheService {
         return getItemByFile(item.getFile());
     }
 
-    private Optional<CacheItem> getItemByFile(CloudFile file) {
+    private Optional<CacheItem> getItemByFile(VirtualFile file) {
         return items.stream()
                 .filter(i -> i.getFile().equals(file))
                 .findAny();
     }
 
-    private Optional<CacheItem> contains(CloudFile file, long offset, int bytesToRead) {
+    private Optional<CacheItem> contains(VirtualFile file, long offset, int bytesToRead) {
         return getItemByFile(file)
                 .filter(i -> i.containsRange(offset, bytesToRead));
     }
 
-    public int downloadCachedItem(CloudFile file, byte[] bytesRead, long offset, int bytesToRead)
+    public int downloadCachedItem(VirtualFile file, byte[] bytesRead, long offset, int bytesToRead)
             throws DownloadFileException, FileNotCachedException {
         CacheItem cacheItem = contains(file, offset, bytesToRead)
                 .orElseThrow(FileNotCachedException::new);

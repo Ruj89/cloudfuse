@@ -5,7 +5,7 @@ import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
 import jnr.ffi.types.size_t;
 import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
-import net.ruj.cloudfuse.fuse.CloudFileSystemService;
+import net.ruj.cloudfuse.fuse.VirtualFileSystemService;
 import ru.serce.jnrfuse.ErrorCodes;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.FuseStubFS;
@@ -14,13 +14,13 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 
 import java.nio.file.Paths;
 
-public class CloudFS extends FuseStubFS {
+public class VirtualFS extends FuseStubFS {
     private VirtualDirectory rootDirectory;
 
-    public CloudFS(CloudFileSystemService cloudFileSystemService) throws MakeRootException {
+    public VirtualFS(VirtualFileSystemService virtualFileSystemService) throws MakeRootException {
         rootDirectory = new VirtualDirectory(Paths.get("/"), "");
-        rootDirectory.addEventHandler(cloudFileSystemService);
-        cloudFileSystemService.onRootDirectoryInit(rootDirectory);
+        rootDirectory.addEventHandler(virtualFileSystemService);
+        virtualFileSystemService.onRootDirectoryInit(rootDirectory);
     }
 
     @Override
@@ -28,7 +28,7 @@ public class CloudFS extends FuseStubFS {
         if (getPath(path) != null) {
             return -ErrorCodes.EEXIST();
         }
-        CloudPath parent = getParentPath(path);
+        VirtualPath parent = getParentPath(path);
         if (parent instanceof VirtualDirectory) {
             ((VirtualDirectory) parent).mkfile(getLastComponent(path));
             return 0;
@@ -39,7 +39,7 @@ public class CloudFS extends FuseStubFS {
 
     @Override
     public int getattr(String path, FileStat stat) {
-        CloudPath p = getPath(path);
+        VirtualPath p = getPath(path);
         if (p != null) {
             p.getattr(stat);
             return 0;
@@ -59,11 +59,11 @@ public class CloudFS extends FuseStubFS {
         return path.substring(path.lastIndexOf("/") + 1);
     }
 
-    private CloudPath getParentPath(String path) {
+    private VirtualPath getParentPath(String path) {
         return rootDirectory.find(path.substring(0, path.lastIndexOf("/")));
     }
 
-    private CloudPath getPath(String path) {
+    private VirtualPath getPath(String path) {
         return rootDirectory.find(path);
     }
 
@@ -72,7 +72,7 @@ public class CloudFS extends FuseStubFS {
         if (getPath(path) != null) {
             return -ErrorCodes.EEXIST();
         }
-        CloudPath parent = getParentPath(path);
+        VirtualPath parent = getParentPath(path);
         if (parent instanceof VirtualDirectory) {
             ((VirtualDirectory) parent).mkdir(getLastComponent(path));
             return 0;
@@ -82,19 +82,19 @@ public class CloudFS extends FuseStubFS {
 
     @Override
     public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-        CloudPath p = getPath(path);
+        VirtualPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof CloudFile)) {
+        if (!(p instanceof VirtualFile)) {
             return -ErrorCodes.EISDIR();
         }
-        return ((CloudFile) p).read(buf, size, offset);
+        return ((VirtualFile) p).read(buf, size, offset);
     }
 
     @Override
     public int readdir(String path, Pointer buf, FuseFillDir filter, @off_t long offset, FuseFileInfo fi) {
-        CloudPath p = getPath(path);
+        VirtualPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
@@ -109,11 +109,11 @@ public class CloudFS extends FuseStubFS {
 
     @Override
     public int rename(String path, String newName) {
-        CloudPath p = getPath(path);
+        VirtualPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        CloudPath newParent = getParentPath(newName);
+        VirtualPath newParent = getParentPath(newName);
         if (newParent == null) {
             return -ErrorCodes.ENOENT();
         }
@@ -128,7 +128,7 @@ public class CloudFS extends FuseStubFS {
 
     @Override
     public int rmdir(String path) {
-        CloudPath p = getPath(path);
+        VirtualPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
@@ -141,20 +141,20 @@ public class CloudFS extends FuseStubFS {
 
     @Override
     public int truncate(String path, long offset) {
-        CloudPath p = getPath(path);
+        VirtualPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof CloudFile)) {
+        if (!(p instanceof VirtualFile)) {
             return -ErrorCodes.EISDIR();
         }
-        ((CloudFile) p).truncate(offset);
+        ((VirtualFile) p).truncate(offset);
         return 0;
     }
 
     @Override
     public int unlink(String path) {
-        CloudPath p = getPath(path);
+        VirtualPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
@@ -164,13 +164,13 @@ public class CloudFS extends FuseStubFS {
 
     @Override
     public int write(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-        CloudPath p = getPath(path);
+        VirtualPath p = getPath(path);
         if (p == null) {
             return -ErrorCodes.ENOENT();
         }
-        if (!(p instanceof CloudFile)) {
+        if (!(p instanceof VirtualFile)) {
             return -ErrorCodes.EISDIR();
         }
-        return ((CloudFile) p).write(buf, Math.toIntExact(size), offset);
+        return ((VirtualFile) p).write(buf, Math.toIntExact(size), offset);
     }
 }

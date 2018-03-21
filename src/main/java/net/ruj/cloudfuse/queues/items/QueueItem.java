@@ -1,16 +1,16 @@
 package net.ruj.cloudfuse.queues.items;
 
 import net.ruj.cloudfuse.clouds.CloudStorageService;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
 
 public abstract class QueueItem {
     private final CloudStorageService cloudStorageService;
-    private final CloudFile file;
+    private final VirtualFile file;
     private QueueItemState state = QueueItemState.ENQUEUED;
 
     QueueItem(
             CloudStorageService cloudStorageService,
-            CloudFile file
+            VirtualFile file
     ) {
 
         this.cloudStorageService = cloudStorageService;
@@ -21,7 +21,7 @@ public abstract class QueueItem {
         return cloudStorageService;
     }
 
-    public CloudFile getFile() {
+    public VirtualFile getFile() {
         return file;
     }
 

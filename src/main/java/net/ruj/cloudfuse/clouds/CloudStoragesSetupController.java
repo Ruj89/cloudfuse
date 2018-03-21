@@ -1,22 +1,22 @@
 package net.ruj.cloudfuse.clouds;
 
 import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
-import net.ruj.cloudfuse.fuse.CloudFileSystemService;
+import net.ruj.cloudfuse.fuse.VirtualFileSystemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class CloudStoragesSetupController {
-    private CloudFileSystemService cloudFileSystemService;
+    private VirtualFileSystemService virtualFileSystemService;
 
     @Autowired
-    public CloudStoragesSetupController(CloudFileSystemService cloudFileSystemService) {
-        this.cloudFileSystemService = cloudFileSystemService;
+    public CloudStoragesSetupController(VirtualFileSystemService virtualFileSystemService) {
+        this.virtualFileSystemService = virtualFileSystemService;
     }
 
     @GetMapping("/mount")
     public void mount() throws IllegalAccessException, MakeRootException {
-        cloudFileSystemService.init();
+        virtualFileSystemService.init();
     }
 }

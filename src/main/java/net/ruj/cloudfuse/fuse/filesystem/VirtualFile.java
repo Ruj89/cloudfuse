@@ -9,10 +9,10 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CloudFile extends CloudPath {
+public class VirtualFile extends VirtualPath {
     private Set<FileEventHandler> fileEventHandlers = new HashSet<>();
 
-    public CloudFile(Path path, String name, VirtualDirectory parent) {
+    public VirtualFile(Path path, String name, VirtualDirectory parent) {
         super(path, name, parent);
     }
 
@@ -92,7 +92,7 @@ public class CloudFile extends CloudPath {
                 .fileSize(this);
     }
 
-    public CloudFile addEventHandler(FileEventHandler eventHandler) {
+    public VirtualFile addEventHandler(FileEventHandler eventHandler) {
         fileEventHandlers.add(eventHandler);
         return this;
     }

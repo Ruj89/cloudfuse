@@ -1,19 +1,19 @@
 package net.ruj.cloudfuse.cache.items;
 
-import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
 
 public class CacheItem {
-    private final CloudFile file;
+    private final VirtualFile file;
     private final byte[] bytes;
     private final long offset;
 
-    public CacheItem(CloudFile file, byte[] bytes, long offset) {
+    public CacheItem(VirtualFile file, byte[] bytes, long offset) {
         this.file = file;
         this.bytes = bytes;
         this.offset = offset;
     }
 
-    public CloudFile getFile() {
+    public VirtualFile getFile() {
         return file;
     }
 

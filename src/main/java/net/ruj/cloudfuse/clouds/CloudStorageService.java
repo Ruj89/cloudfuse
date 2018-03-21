@@ -3,23 +3,23 @@ package net.ruj.cloudfuse.clouds;
 import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.FuseConfiguration;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualDirectory;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFS;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFS;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
 
 import java.nio.file.Path;
 
 public interface CloudStorageService {
-    void init(Path mountPoint, CloudFS cloudFS) throws MakeRootException;
+    void init(Path mountPoint, VirtualFS virtualFS) throws MakeRootException;
 
-    void createFile(VirtualDirectory parent, CloudFile file) throws CreateFileException;
+    void createFile(VirtualDirectory parent, VirtualFile file) throws CreateFileException;
 
-    void uploadFile(CloudFile file, byte[] bytesRead, long writeOffset, byte[] bytesToWrite) throws UploadFileException;
+    void uploadFile(VirtualFile file, byte[] bytesRead, long writeOffset, byte[] bytesToWrite) throws UploadFileException;
 
-    int downloadFile(CloudFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException;
+    int downloadFile(VirtualFile file, byte[] bytesRead, long offset, int bytesToRead) throws DownloadFileException;
 
-    void truncateFile(CloudFile file, long size) throws TruncateFileException;
+    void truncateFile(VirtualFile file, long size) throws TruncateFileException;
 
-    void removeFile(CloudFile file) throws RemoveFileException;
+    void removeFile(VirtualFile file) throws RemoveFileException;
 
     void makeDirectory(VirtualDirectory parent, VirtualDirectory directory) throws MakeDirectoryException;
 
@@ -29,7 +29,7 @@ public interface CloudStorageService {
 
     void synchronizeChildrenPaths(VirtualDirectory directory) throws SynchronizeChildrenException;
 
-    void synchronizeFileSize(CloudFile file) throws FileSizeRequestException;
+    void synchronizeFileSize(VirtualFile file) throws FileSizeRequestException;
 
     boolean isReady();
 }

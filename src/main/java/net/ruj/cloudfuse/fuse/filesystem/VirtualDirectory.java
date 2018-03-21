@@ -1,7 +1,7 @@
 package net.ruj.cloudfuse.fuse.filesystem;
 
 import jnr.ffi.Pointer;
-import net.ruj.cloudfuse.clouds.CloudPathInfo;
+import net.ruj.cloudfuse.clouds.VirtualPathInfo;
 import net.ruj.cloudfuse.clouds.exceptions.CreateFileException;
 import net.ruj.cloudfuse.clouds.exceptions.MakeDirectoryException;
 import net.ruj.cloudfuse.clouds.exceptions.RemoveDirectoryException;
@@ -17,8 +17,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class VirtualDirectory extends CloudPath {
-    private List<CloudPath> contents = new ArrayList<>();
+public class VirtualDirectory extends VirtualPath {
+    private List<VirtualPath> contents = new ArrayList<>();
     private Set<DirectoryEventHandler> directoryEventHandlers = new HashSet<>();
 
     VirtualDirectory(Path path, String name) {
@@ -29,17 +29,17 @@ public class VirtualDirectory extends CloudPath {
         super(path, name, parent);
     }
 
-    synchronized void add(CloudPath p) {
+    synchronized void add(VirtualPath p) {
         contents.add(p);
         p.parent = this;
     }
 
-    synchronized void deleteChild(CloudPath child) {
+    synchronized void deleteChild(VirtualPath child) {
         contents.remove(child);
     }
 
     @Override
-    protected CloudPath find(String path) {
+    protected VirtualPath find(String path) {
         if (super.find(path) != null) {
             return super.find(path);
         }
@@ -48,7 +48,7 @@ public class VirtualDirectory extends CloudPath {
         }
         synchronized (this) {
             if (!path.contains("/")) {
-                for (CloudPath p : contents) {
+                for (VirtualPath p : contents) {
                     if (p.name.equals(path)) {
                         return p;
                     }
@@ -57,7 +57,7 @@ public class VirtualDirectory extends CloudPath {
             }
             String nextName = path.substring(0, path.indexOf("/"));
             String rest = path.substring(path.indexOf("/"));
-            for (CloudPath p : contents) {
+            for (VirtualPath p : contents) {
                 if (p.name.equals(nextName)) {
                     return p.find(rest);
                 }
@@ -75,11 +75,11 @@ public class VirtualDirectory extends CloudPath {
         mkdir(lastComponent, null);
     }
 
-    public synchronized void mkdir(String lastComponent, CloudPathInfo cloudPathInfo) {
+    public synchronized void mkdir(String lastComponent, VirtualPathInfo virtualPathInfo) {
         VirtualDirectory directory = new VirtualDirectory(Paths.get(path.toString(), lastComponent), lastComponent, this);
         contents.add(directory);
         this.directoryEventHandlers.forEach(directory::addEventHandler);
-        if (cloudPathInfo == null)
+        if (virtualPathInfo == null)
             directoryEventHandlers.forEach(deh -> {
                 try {
                     deh.onDirectoryAdded(this, directory);
@@ -87,17 +87,17 @@ public class VirtualDirectory extends CloudPath {
                     e.printStackTrace();
                 }
             });
-        else directoryEventHandlers.forEach(deh -> deh.onDirectorySynchronized(directory, cloudPathInfo));
+        else directoryEventHandlers.forEach(deh -> deh.onDirectorySynchronized(directory, virtualPathInfo));
     }
 
     synchronized void mkfile(String lastComponent) {
         mkfile(lastComponent, null);
     }
 
-    public synchronized void mkfile(String lastComponent, CloudPathInfo cloudPathInfo) {
-        CloudFile file = new CloudFile(Paths.get(path.toString(), lastComponent), lastComponent, this);
+    public synchronized void mkfile(String lastComponent, VirtualPathInfo virtualPathInfo) {
+        VirtualFile file = new VirtualFile(Paths.get(path.toString(), lastComponent), lastComponent, this);
         contents.add(file);
-        if (cloudPathInfo == null)
+        if (virtualPathInfo == null)
             directoryEventHandlers.forEach(deh -> {
                 try {
                     deh.onFileAdded(this, file);
@@ -105,7 +105,7 @@ public class VirtualDirectory extends CloudPath {
                     e.printStackTrace();
                 }
             });
-        else directoryEventHandlers.forEach(deh -> deh.onFileSynchronized(file, cloudPathInfo));
+        else directoryEventHandlers.forEach(deh -> deh.onFileSynchronized(file, virtualPathInfo));
     }
 
     synchronized void read(Pointer buf, FuseFillDir filler) {

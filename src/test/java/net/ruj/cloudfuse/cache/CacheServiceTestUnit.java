@@ -4,7 +4,7 @@ import net.ruj.cloudfuse.cache.exceptions.BiasedStartingOffsetItemException;
 import net.ruj.cloudfuse.cache.exceptions.FileNotCachedException;
 import net.ruj.cloudfuse.cache.services.CacheService;
 import net.ruj.cloudfuse.clouds.exceptions.DownloadFileException;
-import net.ruj.cloudfuse.fuse.filesystem.CloudFile;
+import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
 import org.apache.commons.lang3.ArrayUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
@@ -22,7 +22,7 @@ public class CacheServiceTestUnit {
     public void storeSingleItem()
             throws IOException, BiasedStartingOffsetItemException, FileNotCachedException, DownloadFileException {
         CacheService cacheService = new CacheService();
-        CloudFile file = generateFakeFile("example");
+        VirtualFile file = generateFakeFile("example");
         cacheService.storeItemChanges(file, HELLO_WORLD.getBytes(), 0);
         byte[] bytesRead = new byte[HELLO_WORLD.length()];
         cacheService.downloadCachedItem(file, bytesRead, 0, HELLO_WORLD.length());
@@ -33,7 +33,7 @@ public class CacheServiceTestUnit {
     public void storeSingleItemChunks()
             throws IOException, BiasedStartingOffsetItemException, FileNotCachedException, DownloadFileException {
         CacheService cacheService = new CacheService();
-        CloudFile file = generateFakeFile("example");
+        VirtualFile file = generateFakeFile("example");
         byte[] startingBytes = Arrays.copyOf(HELLO_WORLD.getBytes(), 5);
         byte[] endingBytes = Arrays.copyOfRange(HELLO_WORLD.getBytes(), 5, HELLO_WORLD.length());
         Assertions.assertThat(new String(ArrayUtils.addAll(startingBytes, endingBytes))).isEqualTo(HELLO_WORLD);
@@ -48,8 +48,8 @@ public class CacheServiceTestUnit {
     public void storeTwoDifferentItemsChunks()
             throws IOException, BiasedStartingOffsetItemException, FileNotCachedException, DownloadFileException {
         CacheService cacheService = new CacheService();
-        CloudFile file1 = generateFakeFile("example1");
-        CloudFile file2 = generateFakeFile("example2");
+        VirtualFile file1 = generateFakeFile("example1");
+        VirtualFile file2 = generateFakeFile("example2");
         byte[] startingBytes1 = Arrays.copyOf(HELLO_WORLD.getBytes(), 5);
         byte[] endingBytes1 = Arrays.copyOfRange(HELLO_WORLD.getBytes(), 5, HELLO_WORLD.length());
         Assertions.assertThat(new String(ArrayUtils.addAll(startingBytes1, endingBytes1))).isEqualTo(HELLO_WORLD);
