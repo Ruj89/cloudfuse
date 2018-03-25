@@ -2,6 +2,7 @@ package net.ruj.cloudfuse.fuse;
 
 import jnr.ffi.provider.ClosureManager;
 import jnr.ffi.provider.jffi.NativeRuntime;
+import net.ruj.cloudfuse.CloudFuseConfiguration;
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.clouds.VirtualPathInfo;
 import net.ruj.cloudfuse.clouds.exceptions.*;
@@ -30,7 +31,7 @@ import static org.springframework.util.ReflectionUtils.findField;
 public class VirtualFileSystemService implements DirectoryEventHandler, FileEventHandler {
     private static final Logger logger = LoggerFactory.getLogger(VirtualFileSystemService.class);
 
-    private final FuseConfiguration fuseConfiguration;
+    private final CloudFuseConfiguration cloudFuseConfiguration;
     private final AggregatorService aggregatorService;
 
     private VirtualFS virtualFS;
@@ -40,10 +41,10 @@ public class VirtualFileSystemService implements DirectoryEventHandler, FileEven
 
     @Autowired
     public VirtualFileSystemService(
-            FuseConfiguration fuseConfiguration,
+            CloudFuseConfiguration cloudFuseConfiguration,
             AggregatorService aggregatorService
     ) {
-        this.fuseConfiguration = fuseConfiguration;
+        this.cloudFuseConfiguration = cloudFuseConfiguration;
         this.aggregatorService = aggregatorService;
     }
 
@@ -58,7 +59,7 @@ public class VirtualFileSystemService implements DirectoryEventHandler, FileEven
                     try {
                         virtualFS = new VirtualFS(this);
                         cloudStorageService.init(
-                                Paths.get(fuseConfiguration.getDrive().getLocalFolder()),
+                                Paths.get(cloudFuseConfiguration.getDrive().getLocalFolder()),
                                 virtualFS
                         );
                     } catch (MakeRootException e) {
@@ -175,7 +176,7 @@ public class VirtualFileSystemService implements DirectoryEventHandler, FileEven
             cloudStorageServices.stream()
                     .findAny()
                     .orElseThrow(CloudStorageServiceNotFound::new)
-                    .makeRoot(root, fuseConfiguration);
+                    .makeRoot(root, cloudFuseConfiguration);
         } catch (Exception e) {
             throw new MakeRootException(e);
         }
@@ -237,7 +238,7 @@ public class VirtualFileSystemService implements DirectoryEventHandler, FileEven
     public void addCloudStorageService(CloudStorageService service)
             throws IllegalAccessException {
         this.cloudStorageServices.add(service);
-        if (fuseConfiguration.isAutomount())
+        if (cloudFuseConfiguration.isAutomount())
             init();
     }
 }

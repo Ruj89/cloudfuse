@@ -1,7 +1,7 @@
 package net.ruj.cloudfuse.clouds;
 
 import net.ruj.cloudfuse.clouds.exceptions.*;
-import net.ruj.cloudfuse.fuse.FuseConfiguration;
+import net.ruj.cloudfuse.CloudFuseConfiguration;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualFS;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
@@ -25,7 +25,7 @@ public interface CloudStorageService {
 
     void removeDirectory(VirtualDirectory directory) throws RemoveDirectoryException;
 
-    void makeRoot(VirtualDirectory root, FuseConfiguration fuseConfiguration) throws MakeRootException;
+    void makeRoot(VirtualDirectory root, CloudFuseConfiguration cloudFuseConfiguration) throws MakeRootException;
 
     void synchronizeChildrenPaths(VirtualDirectory directory) throws SynchronizeChildrenException;
 

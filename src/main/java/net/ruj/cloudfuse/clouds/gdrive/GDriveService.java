@@ -6,7 +6,7 @@ import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.clouds.gdrive.models.File;
 import net.ruj.cloudfuse.clouds.gdrive.models.FileList;
 import net.ruj.cloudfuse.database.services.TokenService;
-import net.ruj.cloudfuse.fuse.FuseConfiguration;
+import net.ruj.cloudfuse.CloudFuseConfiguration;
 import net.ruj.cloudfuse.fuse.exceptions.CloudPathInfoNotFound;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualFS;
@@ -248,12 +248,12 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void makeRoot(VirtualDirectory root, FuseConfiguration fuseConfiguration) throws MakeRootException {
+    public void makeRoot(VirtualDirectory root, CloudFuseConfiguration cloudFuseConfiguration) throws MakeRootException {
         logger.info("Mounting root directory...");
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.put("q", Collections.singletonList(
                 "trashed+=+false+and+" +
-                        "name+=+'" + fuseConfiguration.getDrive().getRemoteFolder() + "'+and+" +
+                        "name+=+'" + cloudFuseConfiguration.getDrive().getRemoteFolder() + "'+and+" +
                         "'root'+in+parents+and+" +
                         "mimeType+=+'" + GOOGLE_APPS_FOLDER_MIME_TYPE + "'"
         ));
@@ -272,7 +272,7 @@ public class GDriveService implements CloudStorageService {
                     .getFiles()
                     .stream()
                     .findAny()
-                    .orElseGet(() -> gDriveCreateDirectory(fuseConfiguration.getDrive().getRemoteFolder()));
+                    .orElseGet(() -> gDriveCreateDirectory(cloudFuseConfiguration.getDrive().getRemoteFolder()));
             root.setVirtualPathInfo(new GDriveVirtualPathInfo(remoteFolder));
             //TODO: Transactional synchronization
             root.synchronizeChildrenPaths();
