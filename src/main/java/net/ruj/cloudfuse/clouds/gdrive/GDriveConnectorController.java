@@ -1,6 +1,6 @@
 package net.ruj.cloudfuse.clouds.gdrive;
 
-import net.ruj.cloudfuse.clouds.CloudStorageConnectorAbstractController;
+import net.ruj.cloudfuse.clouds.controllers.OAuth2CloudStorageConnectorGenericController;
 import net.ruj.cloudfuse.clouds.exceptions.MakeRootException;
 import net.ruj.cloudfuse.database.services.TokenService;
 import net.ruj.cloudfuse.fuse.VirtualFileSystemService;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/gdrive")
-public class GDriveConnectorController extends CloudStorageConnectorAbstractController<GDriveService> {
+public class GDriveConnectorController extends OAuth2CloudStorageConnectorGenericController<GDriveService> {
     private final GDriveConfiguration configuration;
 
     @Autowired
@@ -27,7 +27,7 @@ public class GDriveConnectorController extends CloudStorageConnectorAbstractCont
 
     @Override
     @GetMapping("/connect")
-    public void connect() throws IllegalAccessException, MakeRootException {
+    public void connect() throws IllegalAccessException {
         super.connect();
     }
 
