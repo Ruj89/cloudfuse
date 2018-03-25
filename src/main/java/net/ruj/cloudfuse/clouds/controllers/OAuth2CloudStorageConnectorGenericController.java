@@ -21,7 +21,7 @@ public abstract class OAuth2CloudStorageConnectorGenericController<T extends Clo
     }
 
     public void connect() throws IllegalAccessException {
-        virtualFileSystemService.addCloudStorageService(buildCloudStorageService());
+        super.connect();
         updateToken();
     }
 
