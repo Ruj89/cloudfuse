@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
 import java.lang.reflect.Field;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Optional;
@@ -58,10 +57,7 @@ public class VirtualFileSystemService implements DirectoryEventHandler, FileEven
                 .forEach(cloudStorageService -> {
                     try {
                         virtualFS = new VirtualFS(this);
-                        cloudStorageService.init(
-                                Paths.get(cloudFuseConfiguration.getDrive().getLocalFolder()),
-                                virtualFS
-                        );
+                        cloudStorageService.init(virtualFS);
                     } catch (MakeRootException e) {
                         e.printStackTrace();
                     }

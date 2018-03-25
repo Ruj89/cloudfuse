@@ -1,21 +1,21 @@
 package net.ruj.cloudfuse;
 
-import net.ruj.cloudfuse.clouds.gdrive.DriveConfiguration;
+import net.ruj.cloudfuse.clouds.gdrive.GDriveConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConfigurationProperties(prefix = "cloudfuse.fuse.defaults")
 public class CloudFuseConfiguration {
-    private DriveConfiguration drive;
+    private GDriveConfiguration googledrive;
     private boolean automount;
 
-    public DriveConfiguration getDrive() {
-        return drive;
+    public GDriveConfiguration getGoogledrive() {
+        return googledrive;
     }
 
-    public void setDrive(DriveConfiguration drive) {
-        this.drive = drive;
+    public void setGoogledrive(GDriveConfiguration googledrive) {
+        this.googledrive = googledrive;
     }
 
     public boolean isAutomount() {

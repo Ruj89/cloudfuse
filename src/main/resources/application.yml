@@ -26,6 +26,6 @@ cloudfuse:
   fuse:
     defaults:
       automount: false
-      drive:
+      googledrive:
         localFolder: /tmp/mnt
         remoteFolder: cloudfuse

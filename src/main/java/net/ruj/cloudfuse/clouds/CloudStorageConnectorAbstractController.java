@@ -6,12 +6,12 @@ import net.ruj.cloudfuse.database.services.TokenService;
 import net.ruj.cloudfuse.fuse.VirtualFileSystemService;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 
-public abstract class CloudStorageConnectorAbstractController {
+public abstract class CloudStorageConnectorAbstractController<T extends CloudStorageService> {
     protected final VirtualFileSystemService virtualFileSystemService;
     protected final TokenService tokenService;
     private final OAuth2RestTemplate oAuth2RestTemplate;
 
-    public CloudStorageConnectorAbstractController(
+    protected CloudStorageConnectorAbstractController(
             VirtualFileSystemService virtualFileSystemService,
             OAuth2RestTemplate oAuth2RestTemplate,
             TokenService tokenService) {
@@ -21,10 +21,14 @@ public abstract class CloudStorageConnectorAbstractController {
     }
 
     public void connect() throws IllegalAccessException, MakeRootException {
+        virtualFileSystemService.addCloudStorageService(buildCloudStorageService());
+
         Token token = new Token();
         token.setToken(oAuth2RestTemplate.getAccessToken().getValue());
         token.setRefreshToken(oAuth2RestTemplate.getAccessToken().getRefreshToken().getValue());
         token.setExpirationDate(oAuth2RestTemplate.getAccessToken().getExpiration());
         tokenService.update(token);
     }
+
+    protected abstract T buildCloudStorageService();
 }

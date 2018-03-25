@@ -1,15 +1,13 @@
 package net.ruj.cloudfuse.clouds;
 
-import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.CloudFuseConfiguration;
+import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualFS;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualFile;
 
-import java.nio.file.Path;
-
 public interface CloudStorageService {
-    void init(Path mountPoint, VirtualFS virtualFS) throws MakeRootException;
+    void init(VirtualFS virtualFS) throws MakeRootException;
 
     void createFile(VirtualDirectory parent, VirtualFile file) throws CreateFileException;
 

@@ -1,12 +1,12 @@
 package net.ruj.cloudfuse.clouds.gdrive;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.ruj.cloudfuse.CloudFuseConfiguration;
 import net.ruj.cloudfuse.clouds.CloudStorageService;
 import net.ruj.cloudfuse.clouds.exceptions.*;
 import net.ruj.cloudfuse.clouds.gdrive.models.File;
 import net.ruj.cloudfuse.clouds.gdrive.models.FileList;
 import net.ruj.cloudfuse.database.services.TokenService;
-import net.ruj.cloudfuse.CloudFuseConfiguration;
 import net.ruj.cloudfuse.fuse.exceptions.CloudPathInfoNotFound;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualDirectory;
 import net.ruj.cloudfuse.fuse.filesystem.VirtualFS;
@@ -36,6 +36,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,12 +47,14 @@ import static org.springframework.http.HttpHeaders.*;
 public class GDriveService implements CloudStorageService {
     private static final Logger logger = LoggerFactory.getLogger(GDriveService.class);
     private static final String GOOGLE_APPS_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
+    private final GDriveConfiguration configuration;
     private final RestTemplate restTemplate;
     private final ObjectMapper mapper;
     private TokenService tokenService;
 
-    GDriveService(TokenService tokenService) {
+    GDriveService(TokenService tokenService, GDriveConfiguration configuration) {
         this.tokenService = tokenService;
+        this.configuration = configuration;
         this.restTemplate = new RestTemplate();
         this.mapper = new ObjectMapper();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
@@ -59,8 +62,9 @@ public class GDriveService implements CloudStorageService {
     }
 
     @Override
-    public void init(Path mountPoint, VirtualFS virtualFS) {
-        logger.info("Mounting Google Drive fuse partition on '" + mountPoint.toString() + "'...");
+    public void init(VirtualFS virtualFS) {
+        Path mountPoint = Paths.get(configuration.getLocalFolder());
+        logger.info("Mounting Google Drive fuse partition on '" + mountPoint + "'...");
         virtualFS.mount(mountPoint, false);
         logger.info("Google Drive mounted!");
     }
@@ -253,7 +257,7 @@ public class GDriveService implements CloudStorageService {
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.put("q", Collections.singletonList(
                 "trashed+=+false+and+" +
-                        "name+=+'" + cloudFuseConfiguration.getDrive().getRemoteFolder() + "'+and+" +
+                        "name+=+'" + cloudFuseConfiguration.getGoogledrive().getRemoteFolder() + "'+and+" +
                         "'root'+in+parents+and+" +
                         "mimeType+=+'" + GOOGLE_APPS_FOLDER_MIME_TYPE + "'"
         ));
@@ -272,7 +276,7 @@ public class GDriveService implements CloudStorageService {
                     .getFiles()
                     .stream()
                     .findAny()
-                    .orElseGet(() -> gDriveCreateDirectory(cloudFuseConfiguration.getDrive().getRemoteFolder()));
+                    .orElseGet(() -> gDriveCreateDirectory(cloudFuseConfiguration.getGoogledrive().getRemoteFolder()));
             root.setVirtualPathInfo(new GDriveVirtualPathInfo(remoteFolder));
             //TODO: Transactional synchronization
             root.synchronizeChildrenPaths();

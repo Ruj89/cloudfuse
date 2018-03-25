@@ -12,19 +12,27 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/gdrive")
-public class GDriveConnectorController extends CloudStorageConnectorAbstractController {
+public class GDriveConnectorController extends CloudStorageConnectorAbstractController<GDriveService> {
+    private final GDriveConfiguration configuration;
+
     @Autowired
     public GDriveConnectorController(
             VirtualFileSystemService virtualFileSystemService,
             OAuth2RestTemplate oAuth2RestTemplate,
-            TokenService tokenService) {
+            TokenService tokenService,
+            GDriveConfiguration configuration) {
         super(virtualFileSystemService, oAuth2RestTemplate, tokenService);
+        this.configuration = configuration;
     }
 
     @Override
     @GetMapping("/connect")
     public void connect() throws IllegalAccessException, MakeRootException {
-        virtualFileSystemService.addCloudStorageService(new GDriveService(tokenService));
         super.connect();
+    }
+
+    @Override
+    protected GDriveService buildCloudStorageService() {
+        return new GDriveService(tokenService, configuration);
     }
 }
